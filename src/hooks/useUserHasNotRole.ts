@@ -3,22 +3,24 @@ import { useAuth } from '../contexts/AuthContext';
 import { jwtDecode } from 'jwt-decode';
 import { CustomJwtPayload } from '../types/jwt'; // Import the custom interface
 
-const useUserHasRole = (roles: string[]) => {
+const useUserHasNotRole = (roles: string[]) => {
   const { user } = useAuth();
-  const [hasRole, setHasRole] = useState(false);
+  const [hasNotRole, setHasNotRole] = useState(false);
 
   useEffect(() => {
     if (user) {
       const decodedToken = jwtDecode<CustomJwtPayload>(user.jwt); // Use the custom type
       if (Array.isArray(decodedToken.role)) {
-        setHasRole(decodedToken.role.some(role => roles.includes(role)));
+        setHasNotRole(!decodedToken.role.some(role => roles.includes(role)));
       } else {
-        setHasRole(roles.includes(decodedToken.role));
+        setHasNotRole(!roles.includes(decodedToken.role));
       }
+    } else {
+      setHasNotRole(true);
     }
   }, [user, roles]);
 
-  return hasRole;
+  return hasNotRole;
 };
 
-export default useUserHasRole;
+export default useUserHasNotRole;

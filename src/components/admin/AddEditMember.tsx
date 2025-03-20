@@ -11,10 +11,10 @@ const AddEditMember = () => {
     password: '',
     roles: '',
   });
-  const [applicationRoles, setApplicationRoles] = useState([]);
-  const [existingMemberRoles, setExistingMemberRoles] = useState([]);
+  const [applicationRoles, setApplicationRoles] = useState<string[]>([]); // টাইপ ডিফাইন করুন
+  const [existingMemberRoles, setExistingMemberRoles] = useState<string[]>([]); // টাইপ ডিফাইন করুন
   const [submitted, setSubmitted] = useState(false);
-  const [errorMessages, setErrorMessages] = useState([]);
+  const [errorMessages, setErrorMessages] = useState<string[]>([]); // টাইপ ডিফাইন করুন
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,7 +26,7 @@ const AddEditMember = () => {
         })
         .catch(error => console.log(error));
     }
-    axios.get('/api/admin/get-application-roles')
+    axios.get<string[]>('/api/admin/get-application-roles') // টাইপ ডিফাইন করুন
       .then(response => setApplicationRoles(response.data))
       .catch(error => console.log(error));
   }, [id]);
@@ -49,7 +49,7 @@ const AddEditMember = () => {
     }
   };
 
-  const handleRoleChange = (role) => {
+  const handleRoleChange = (role: string) => {
     const roles = formData.roles.split(',');
     const index = roles.indexOf(role);
     if (index !== -1) {

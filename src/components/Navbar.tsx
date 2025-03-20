@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import useUserHasRole from '../hooks/useUserHasRole';
+import useUserHasNotRole from '../hooks/useUserHasNotRole';
 
 const Navbar = () => {
   const [collapsed, setCollapsed] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const isAdmin = useUserHasRole(['Admin']);
+  const isNotAdmin = useUserHasNotRole(['Admin']);
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
@@ -33,10 +38,12 @@ const Navbar = () => {
               </li>
               {user && (
                 <>
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/customer">Customer</Link>
-                  </li>
-                  {user.role === 'Admin' && (
+                  {isNotAdmin && (
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/customer">Customer</Link>
+                    </li>
+                  )}
+                  {isAdmin && (
                     <li className="nav-item">
                       <Link className="nav-link" to="/admin">Admin</Link>
                     </li>

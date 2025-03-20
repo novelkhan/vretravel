@@ -1,30 +1,23 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import App from './App';
-import Login from './components/account/Login';
-import Register from './components/account/Register';
-import Cart from './components/cart/Cart';
-import Home from './components/Home';
-import Customer from './components/Customer';
-import Admin from './components/Admin';
-import NotFound from './components/shared/NotFound';
 
-ReactDOM.render(
-  <Router>
-    <Routes>
-      <Route path="/" element={<App />}>
-        <Route index element={<Home />} />
-        <Route path="customer" element={<Customer />} />
-        <Route path="admin" element={<Admin />} />
-        <Route path="cart" element={<Cart />} />
-        <Route path="account">
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Route>
-    </Routes>
-  </Router>,
-  document.getElementById('root')
+const container = document.getElementById('root');
+const root = createRoot(container);
+
+root.render(
+  <BrowserRouter
+    future={{
+      v7_startTransition: true, // React.startTransition() সক্রিয় করবে
+      v7_relativeSplatPath: true, // রিলেটিভ রাউট রেজল্যুশন ফিক্স করবে
+    }}
+  >
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </BrowserRouter>
 );

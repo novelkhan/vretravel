@@ -1,34 +1,25 @@
-// src/services/api.js
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
 
+// Create an instance of axios
 const api = axios.create({
-  baseURL: 'https://localhost:7039', // আপনার API এর বেস URL
+  baseURL: 'https://localhost:7039',
   withCredentials: true,
 });
 
-// Request Interceptor
-api.interceptors.request.use(
-  (config) => {
-    const user = JSON.parse(localStorage.getItem('user')); // localStorage থেকে ইউজার ডেটা লোড করুন
-    if (user && user.jwt) {
-      config.headers.Authorization = `Bearer ${user.jwt}`; // JWT টোকেন হেডারে যোগ করুন
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response Interceptor
+// Add response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     if (error.response.status === 401) {
-      // 401 Unauthorized এরর হলে লগআউট করুন
-      const { logout } = useAuth();
-      logout();
+      // Handle unauthorized access (e.g., redirect to login page)
+      console.error('Unauthorized access! Redirecting to login...');
+      window.location.href = '/account/login';
+    } else if (error.response.status === 404) {
+      // Handle not found errors
+      console.error('Resource not found!');
+    } else {
+      // Handle other errors
+      console.error('An error occurred:', error.message);
     }
     return Promise.reject(error);
   }

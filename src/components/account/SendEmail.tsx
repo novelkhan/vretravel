@@ -5,17 +5,18 @@ import axios from 'axios';
 const SendEmail = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [errorMessages, setErrorMessages] = useState([]);
+  const [errorMessages, setErrorMessages] = useState<string[]>([]); // টাইপ ডিফাইন করুন
   const { mode } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!mode) {
       navigate('/account/login');
+      return; // Early return to avoid further execution
     }
   }, [mode, navigate]);
 
-  const sendEmail = async (e) => {
+  const sendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
     setErrorMessages([]);
@@ -42,7 +43,7 @@ const SendEmail = () => {
           <form onSubmit={sendEmail}>
             <div className="text-center mb-4">
               <h1 className="mb-3 font-weight-normal">
-                {mode.includes('resend-email-confirmation-link') ? 'Resend email confirmation link' : 'Retrieve your username or password'}
+                {mode && mode.includes('resend-email-confirmation-link') ? 'Resend email confirmation link' : 'Retrieve your username or password'}
               </h1>
             </div>
             <div className="form-floating mb-3">

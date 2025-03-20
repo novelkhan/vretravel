@@ -5,11 +5,11 @@ import axios from 'axios';
 const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [errorMessages, setErrorMessages] = useState([]);
+  const [errorMessages, setErrorMessages] = useState<string[]>([]); // টাইপ ডিফাইন করুন
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
-  const email = searchParams.get('email');
+  const email = searchParams.get('email') || ''; // ডিফল্ট ভ্যালু হিসেবে '' ব্যবহার করুন
 
   useEffect(() => {
     if (!token || !email) {
@@ -17,7 +17,7 @@ const ResetPassword = () => {
     }
   }, [token, email, navigate]);
 
-  const resetPassword = async (e) => {
+  const resetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
     setErrorMessages([]);
