@@ -3,7 +3,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
 import App from './App';
 
 const container = document.getElementById('root');
@@ -16,8 +15,8 @@ root.render(
       v7_relativeSplatPath: true, // রিলেটিভ রাউট রেজল্যুশন ফিক্স করবে
     }}
   >
-    <AuthProvider>
+    <AccountProvider>
       <App />
-    </AuthProvider>
+    </AccountProvider>
   </BrowserRouter>
 );
