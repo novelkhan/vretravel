@@ -1,69 +1,101 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import useUserHasRole from '../hooks/useUserHasRole';
-import useUserHasNotRole from '../hooks/useUserHasNotRole';
+import { NavLink } from 'react-router-dom';
+import accountService from '../services/AccountService';
+import { UserHasRole } from './directives/UserHasRole';
+import { UserHasNotRole } from './directives/UserHasNotRole';
+import { useAccount } from '../context/AccountContext';
+import './Navbar.css';
 
-const Navbar = () => {
+const Navbar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(true);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAccount();
 
-  const isAdmin = useUserHasRole(['Admin']);
-  const isNotAdmin = useUserHasNotRole(['Admin']);
-
-  const toggleCollapsed = () => {
-    setCollapsed(!collapsed);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const toggleCollapsed = () => setCollapsed(!collapsed);
+  const logout = () => accountService.logout();
 
   return (
     <header>
       <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
         <div className="container">
-          <Link className="navbar-brand" to="/">
-            <img src="./assets/images/logo.png" className="me-3" alt="Logo" />
-          </Link>
-          <button className="navbar-toggler" type="button" onClick={toggleCollapsed}>
+          <a className="navbar-brand">
+            <img src="/assets/images/logo.png" className="me-3" alt="Logo" />
+          </a>
+          <button
+            className="navbar-toggler"
+            type="button"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label="Toggle navigation"
+          >
             <span className="navbar-toggler-icon"></span>
           </button>
-          <div className={`collapse navbar-collapse ${collapsed ? '' : 'show'}`}>
+          <div className={`collapse navbar-collapse ${collapsed ? 'collapse' : ''}`}>
             <ul className="navbar-nav me-auto">
               <li className="nav-item">
-                <Link className="nav-link" to="/">Home</Link>
+                <NavLink
+                  to="/"
+                  className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  end
+                >
+                  Home
+                </NavLink>
               </li>
               {user && (
                 <>
-                  {isNotAdmin && (
+                  <UserHasNotRole roles={['Admin']}>
                     <li className="nav-item">
-                      <Link className="nav-link" to="/customer">Customer</Link>
+                      <NavLink
+                        to="/customer"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                      >
+                        Customer
+                      </NavLink>
                     </li>
-                  )}
-                  {isAdmin && (
+                  </UserHasNotRole>
+                  <UserHasRole roles={['Admin']}>
                     <li className="nav-item">
-                      <Link className="nav-link" to="/admin">Admin</Link>
+                      <NavLink
+                        to="/admin"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                      >
+                        Admin
+                      </NavLink>
                     </li>
-                  )}
+                  </UserHasRole>
                 </>
               )}
             </ul>
+
             {!user ? (
               <ul className="navbar-nav">
                 <li className="nav-item">
-                  <Link className="btn btn-secondary mx-2" to="/account/register">Create account</Link>
+                  <NavLink
+                    to="/account/register"
+                    className={({ isActive }) => `btn btn-secondary mx-2 ${isActive ? 'active' : ''}`}
+                  >
+                    Create account
+                  </NavLink>
                 </li>
                 <li className="nav-item">
-                  <Link className="btn btn-secondary" to="/account/login">Login</Link>
+                  <NavLink
+                    to="/account/login"
+                    className={({ isActive }) => `btn btn-secondary ${isActive ? 'active' : ''}`}
+                  >
+                    Login
+                  </NavLink>
                 </li>
               </ul>
             ) : (
               <div className="d-flex align-items-center">
-                <span className="text-white me-2">Hi <span className="h3 text-warning">{user.firstName}</span></span>
-                <button className="btn btn-secondary" onClick={handleLogout}>Logout</button>
+                <a className="text-white" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                  Hi{' '}
+                  <span className="h3 text-warning">
+                    {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1)}
+                  </span>
+                </a>
+                <button className="btn btn-secondary ms-2" onClick={logout}>
+                  Logout
+                </button>
               </div>
             )}
           </div>

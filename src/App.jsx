@@ -3,9 +3,13 @@ import { Routes, Route, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './components/Home';
+import NotificationComponent from './components/shared/NotificationComponent';
+import ExpiringSessionCountdownComponent from './components/shared/ExpiringSessionCountdownComponent';
 import NotFound from './components/shared/NotFound';
+import { RouteGuard } from './guards/RouteGuard';
 
 const Admin = React.lazy(() => import('./components/admin/Admin'));
+const AddEditMember = React.lazy(() => import('./components/admin/AddEditMember'));
 const Customer = React.lazy(() => import('./components/Customer'));
 const Cart = React.lazy(() => import('./components/cart/Cart'));
 const OrderHistory = React.lazy(() => import('./components/order/OrderHistory'));
@@ -20,7 +24,9 @@ const AppLayout = () => {
   return (
     <div>
       <Navbar />
-      <div className="container mt-5" style={{ minHeight: '500px' }}>
+      <NotificationComponent />
+      <ExpiringSessionCountdownComponent />
+      <div style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '3rem', minHeight: '500px' }}>
         <Outlet />
       </div>
       <Footer />
@@ -34,14 +40,22 @@ const App = () => {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<Home />} />
-          <Route path="customer" element={<Customer />} />
-          <Route path="admin" element={<Admin />} />
-          <Route path="cart" element={<Cart />} />
-          <Route path="order-history" element={<OrderHistory />} />
-          <Route path="order-details/:id" element={<OrderDetails />} />
-          <Route path="packages" element={<Packages />} />
-          <Route path="packages/add-package" element={<AddPackage />} />
-          <Route path="packages/edit-package/:id" element={<EditPackage />} />
+          <Route element={<RouteGuard requireAuth />}>
+            <Route element={<RouteGuard requireNotAdmin />}>
+              <Route path="customer" element={<Customer />} />
+            </Route>
+            <Route element={<RouteGuard requireAdmin />}>
+              <Route path="admin" element={<Admin />} />
+              <Route path="admin/add-edit-member" element={<AddEditMember />} />
+              <Route path="admin/add-edit-member/:id" element={<AddEditMember />} />
+              <Route path="packages/add-package" element={<AddPackage />} />
+              <Route path="packages/edit-package/:id" element={<EditPackage />} />
+            </Route>
+            <Route path="cart" element={<Cart />} />
+            <Route path="order-history" element={<OrderHistory />} />
+            <Route path="order-details/:id" element={<OrderDetails />} />
+            <Route path="packages" element={<Packages />} />
+          </Route>
           <Route path="account">
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
