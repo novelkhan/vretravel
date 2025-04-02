@@ -6,6 +6,7 @@ interface NotificationState {
   isSuccess: boolean;
   title: string;
   message: string;
+  callback?: () => void;
 }
 
 const NotificationComponent: React.FC = () => {
@@ -14,19 +15,12 @@ const NotificationComponent: React.FC = () => {
     isSuccess: true,
     title: '',
     message: '',
+    callback: undefined,
   });
 
   useEffect(() => {
     const subscription = sharedService.notification$.subscribe((newState) => {
       setState(newState);
-
-      if (newState.isOpen) {
-        const modalElement = document.getElementById('notificationModal');
-        if (modalElement) {
-          const modal = new (window as any).bootstrap.Modal(modalElement);
-          modal.show();
-        }
-      }
     });
 
     return () => subscription.unsubscribe();
@@ -38,6 +32,7 @@ const NotificationComponent: React.FC = () => {
     if (modalElement) {
       const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
       modal.hide();
+      if (state.callback) state.callback();
     }
   };
 
@@ -54,7 +49,7 @@ const NotificationComponent: React.FC = () => {
           <div className="modal-body">{state.message}</div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={handleClose}>
-              Ok
+              OK
             </button>
           </div>
         </div>

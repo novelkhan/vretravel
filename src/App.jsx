@@ -11,6 +11,7 @@ import accountService from './services/AccountService';
 import sharedService from './services/SharedService';
 
 const Admin = React.lazy(() => import('./components/admin/Admin'));
+const AddEditMember = React.lazy(() => import('./components/admin/AddEditMember'));
 const Customer = React.lazy(() => import('./components/Customer'));
 const Cart = React.lazy(() => import('./components/cart/Cart'));
 const OrderHistory = React.lazy(() => import('./components/order/OrderHistory'));
@@ -76,6 +77,8 @@ const App = () => {
             </Route>
             <Route element={<RouteGuard requireAdmin />}>
               <Route path="admin" element={<Admin />} />
+              <Route path="admin/add-edit-member" element={<AddEditMember />} />
+              <Route path="admin/add-edit-member/:id" element={<AddEditMember />} />
               <Route path="packages/add-package" element={<AddPackage />} />
               <Route path="packages/edit-package/:id" element={<EditPackage />} />
             </Route>
