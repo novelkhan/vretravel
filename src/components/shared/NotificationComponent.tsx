@@ -22,28 +22,9 @@ const NotificationComponent: React.FC = () => {
   useEffect(() => {
     const subscription = sharedService.notification$.subscribe((newState) => {
       setState(newState);
-
-      const modalElement = document.getElementById('notificationModal');
-      if (modalElement) {
-        const modal = (window as any).bootstrap.Modal.getOrCreateInstance(modalElement); // Reuse করা instance
-        if (newState.isOpen) {
-          modal.show();
-        } else {
-          modal.hide();
-          document.body.classList.remove('modal-open'); // Backdrop ঠিক করার জন্য
-          const backdrop = document.querySelector('.modal-backdrop');
-          if (backdrop) backdrop.remove(); // Backdrop manually remove
-        }
-      }
     });
 
-    return () => {
-      subscription.unsubscribe();
-      // Cleanup করার সময় backdrop remove
-      document.body.classList.remove('modal-open');
-      const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) backdrop.remove();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleClose = () => {

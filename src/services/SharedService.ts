@@ -6,7 +6,7 @@ interface NotificationState {
   isSuccess: boolean;
   title: string;
   message: string;
-  callback?: () => void; // Angular-এর মতো callback যোগ করা হয়েছে
+  callback?: () => void;
 }
 
 class SharedService {
@@ -21,7 +21,7 @@ class SharedService {
   private modalOpenedSubject = new Subject<number>();
   public notification$ = this.notificationSubject.asObservable();
   public modalOpened$ = this.modalOpenedSubject.asObservable();
-  public displayingExpiringSessionModal = false; // Angular-এর মতো property রাখা হয়েছে
+  public displayingExpiringSessionModal = false;
 
   showNotification(isSuccess: boolean, title: string, message: string, callback?: () => void) {
     console.log('Showing notification:', { isSuccess, title, message });
@@ -41,6 +41,16 @@ class SharedService {
       ...this.notificationSubject.getValue(),
       isOpen: false,
     });
+    const modalElement = document.getElementById('notificationModal');
+    if (modalElement) {
+      const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
+      if (modal) {
+        modal.hide();
+        document.body.classList.remove('modal-open'); // Backdrop ঠিক করার জন্য
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.remove();
+      }
+    }
   }
 
   private openNotificationModal() {
@@ -57,7 +67,7 @@ class SharedService {
     if (modalElement) {
       const modal = new (window as any).bootstrap.Modal(modalElement);
       modal.show();
-      this.modalOpenedSubject.next(targetTime); // Angular-এর মতো targetTime emit করা হয়েছে
+      this.modalOpenedSubject.next(targetTime);
     }
   }
 }
