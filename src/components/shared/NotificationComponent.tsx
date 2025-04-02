@@ -1,3 +1,4 @@
+// src/components/NotificationComponent.ts
 import React, { useEffect, useState } from 'react';
 import sharedService from '../../services/SharedService';
 
@@ -21,19 +22,33 @@ const NotificationComponent: React.FC = () => {
   useEffect(() => {
     const subscription = sharedService.notification$.subscribe((newState) => {
       setState(newState);
+
+      const modalElement = document.getElementById('notificationModal');
+      if (modalElement) {
+        const modal = (window as any).bootstrap.Modal.getOrCreateInstance(modalElement); // Reuse করা instance
+        if (newState.isOpen) {
+          modal.show();
+        } else {
+          modal.hide();
+          document.body.classList.remove('modal-open'); // Backdrop ঠিক করার জন্য
+          const backdrop = document.querySelector('.modal-backdrop');
+          if (backdrop) backdrop.remove(); // Backdrop manually remove
+        }
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      // Cleanup করার সময় backdrop remove
+      document.body.classList.remove('modal-open');
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) backdrop.remove();
+    };
   }, []);
 
   const handleClose = () => {
     sharedService.closeNotification();
-    const modalElement = document.getElementById('notificationModal');
-    if (modalElement) {
-      const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
-      modal.hide();
-      if (state.callback) state.callback();
-    }
+    if (state.callback) state.callback(); // Callback execute করা
   };
 
   if (!state.isOpen) return null;

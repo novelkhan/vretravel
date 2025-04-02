@@ -134,7 +134,7 @@ class AccountService {
             console.log('Timeout reached, opening expiring session modal...');
             sharedService.displayingExpiringSessionModal = true;
             sharedService.openExpiringSessionCountdown();
-          }, 10 * 60 * 1000); // ১০ মিনিট পরে টাইমআউট
+          }, 10 * 1000); // ১০ মিনিট পরে টাইমআউট
         } else {
           console.log('Expiring session modal already displaying...');
         }

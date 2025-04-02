@@ -9,6 +9,7 @@ import NotFound from './components/shared/NotFound';
 import { RouteGuard } from './guards/RouteGuard';
 import accountService from './services/AccountService';
 import sharedService from './services/SharedService';
+import { AccountProvider } from './context/AccountContext';
 
 const Admin = React.lazy(() => import('./components/admin/Admin'));
 const AddEditMember = React.lazy(() => import('./components/admin/AddEditMember'));
@@ -24,7 +25,7 @@ const Register = React.lazy(() => import('./components/account/Register'));
 
 const AppLayout = () => {
   const checkUserActivity = () => {
-    console.log('User activity detected, checking idle timeout...'); // ডিবাগিং লজিক
+    console.log('User activity detected, checking idle timeout...');
     accountService.checkUserIdleTimeout();
   };
 
@@ -67,34 +68,36 @@ const App = () => {
   }, []);
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route index element={<Home />} />
-          <Route element={<RouteGuard requireAuth />}>
-            <Route element={<RouteGuard requireNotAdmin />}>
-              <Route path="customer" element={<Customer />} />
+    <AccountProvider>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route index element={<Home />} />
+            <Route element={<RouteGuard requireAuth />}>
+              <Route element={<RouteGuard requireNotAdmin />}>
+                <Route path="customer" element={<Customer />} />
+              </Route>
+              <Route element={<RouteGuard requireAdmin />}>
+                <Route path="admin" element={<Admin />} />
+                <Route path="admin/add-edit-member" element={<AddEditMember />} />
+                <Route path="admin/add-edit-member/:id" element={<AddEditMember />} />
+                <Route path="packages/add-package" element={<AddPackage />} />
+                <Route path="packages/edit-package/:id" element={<EditPackage />} />
+              </Route>
+              <Route path="cart" element={<Cart />} />
+              <Route path="order-history" element={<OrderHistory />} />
+              <Route path="order-details/:id" element={<OrderDetails />} />
+              <Route path="packages" element={<Packages />} />
             </Route>
-            <Route element={<RouteGuard requireAdmin />}>
-              <Route path="admin" element={<Admin />} />
-              <Route path="admin/add-edit-member" element={<AddEditMember />} />
-              <Route path="admin/add-edit-member/:id" element={<AddEditMember />} />
-              <Route path="packages/add-package" element={<AddPackage />} />
-              <Route path="packages/edit-package/:id" element={<EditPackage />} />
+            <Route path="account">
+              <Route path="login" element={<Login />} />
+              <Route path="register" element={<Register />} />
             </Route>
-            <Route path="cart" element={<Cart />} />
-            <Route path="order-history" element={<OrderHistory />} />
-            <Route path="order-details/:id" element={<OrderDetails />} />
-            <Route path="packages" element={<Packages />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
-          <Route path="account">
-            <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </AccountProvider>
   );
 };
 
