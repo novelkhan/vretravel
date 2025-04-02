@@ -1,69 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import sharedService from '../../services/SharedService';
 
-const NotificationComponent = () => {
-  const [isSuccess, setIsSuccess] = useState(true);
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-  const [callback, setCallback] = useState<(() => void) | undefined>(undefined);
+interface NotificationState {
+  isOpen: boolean;
+  isSuccess: boolean;
+  title: string;
+  message: string;
+}
+
+const NotificationComponent: React.FC = () => {
+  const [state, setState] = useState<NotificationState>({
+    isOpen: false,
+    isSuccess: true,
+    title: '',
+    message: '',
+  });
 
   useEffect(() => {
-    const subscription = (data: { isSuccess: boolean; title: string; message: string; callback?: () => void }) => {
-      setIsSuccess(data.isSuccess);
-      setTitle(data.title);
-      setMessage(data.message);
-      setCallback(() => data.callback);
-    };
+    const subscription = sharedService.notification$.subscribe((newState) => {
+      setState(newState);
 
-    sharedService.onNotification(subscription);
+      if (newState.isOpen) {
+        const modalElement = document.getElementById('notificationModal');
+        if (modalElement) {
+          const modal = new (window as any).bootstrap.Modal(modalElement);
+          modal.show();
+        }
+      }
+    });
 
-    return () => {
-      // Cleanup subscription
-      sharedService.onNotification(() => {});
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const closeModal = () => {
+  const handleClose = () => {
+    sharedService.closeNotification();
     const modalElement = document.getElementById('notificationModal');
     if (modalElement) {
-      modalElement.classList.remove('show');
-      modalElement.style.display = 'none';
-      document.body.classList.remove('modal-open');
-    }
-    if (callback) {
-      callback();
+      const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
+      modal.hide();
     }
   };
 
+  if (!state.isOpen) return null;
+
   return (
-    <div
-      id="notificationModal"
-      className="modal-overlay"
-      style={{ display: 'none' }}
-    >
-      <div
-        className="modal-container"
-        style={{
-          borderTop: `5px solid ${isSuccess ? 'green' : 'red'}`,
-          background: '#fff',
-          padding: '1rem',
-          borderRadius: '8px',
-          width: '400px'
-        }}
-      >
-        <div className="modal-header">
-          <h5 style={{ margin: 0 }}>{title}</h5>
-          <button onClick={closeModal} style={{ background: 'none', border: 'none', fontSize: '16px' }}>
-            ✖
-          </button>
-        </div>
-        <div className="modal-body">
-          <p>{message}</p>
-        </div>
-        <div className="modal-footer" style={{ textAlign: 'right' }}>
-          <button onClick={closeModal} style={{ padding: '8px 16px', background: '#ccc', border: 'none', cursor: 'pointer' }}>
-            OK
-          </button>
+    <div className="modal fade" id="notificationModal" tabIndex={-1} aria-labelledby="notificationModalLabel" aria-hidden="true">
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className={`modal-header ${state.isSuccess ? 'bg-success' : 'bg-danger'} text-white`}>
+            <h4 className="modal-title">{state.title}</h4>
+            <button type="button" className="btn-close" onClick={handleClose} aria-label="Close"></button>
+          </div>
+          <div className="modal-body">{state.message}</div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={handleClose}>
+              Ok
+            </button>
+          </div>
         </div>
       </div>
     </div>

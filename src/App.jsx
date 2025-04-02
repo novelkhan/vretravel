@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Routes, Route, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -7,9 +7,10 @@ import NotificationComponent from './components/shared/NotificationComponent';
 import ExpiringSessionCountdownComponent from './components/shared/ExpiringSessionCountdownComponent';
 import NotFound from './components/shared/NotFound';
 import { RouteGuard } from './guards/RouteGuard';
+import accountService from './services/AccountService';
+import sharedService from './services/SharedService';
 
 const Admin = React.lazy(() => import('./components/admin/Admin'));
-const AddEditMember = React.lazy(() => import('./components/admin/AddEditMember'));
 const Customer = React.lazy(() => import('./components/Customer'));
 const Cart = React.lazy(() => import('./components/cart/Cart'));
 const OrderHistory = React.lazy(() => import('./components/order/OrderHistory'));
@@ -21,6 +22,21 @@ const Login = React.lazy(() => import('./components/account/Login'));
 const Register = React.lazy(() => import('./components/account/Register'));
 
 const AppLayout = () => {
+  const checkUserActivity = () => {
+    console.log('User activity detected, checking idle timeout...'); // ডিবাগিং লজিক
+    accountService.checkUserIdleTimeout();
+  };
+
+  useEffect(() => {
+    window.addEventListener('keydown', checkUserActivity);
+    window.addEventListener('mousedown', checkUserActivity);
+
+    return () => {
+      window.removeEventListener('keydown', checkUserActivity);
+      window.removeEventListener('mousedown', checkUserActivity);
+    };
+  }, []);
+
   return (
     <div>
       <Navbar />
@@ -35,6 +51,20 @@ const AppLayout = () => {
 };
 
 const App = () => {
+  useEffect(() => {
+    const jwt = accountService.getJWT();
+    if (jwt) {
+      accountService.refreshUser(jwt).catch((error) => {
+        accountService.logout();
+        if (error.response?.status === 401) {
+          sharedService.showNotification(false, 'Account blocked', error.response?.data || 'Unauthorized');
+        }
+      });
+    } else {
+      accountService.refreshUser(null);
+    }
+  }, []);
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Routes>
@@ -46,8 +76,6 @@ const App = () => {
             </Route>
             <Route element={<RouteGuard requireAdmin />}>
               <Route path="admin" element={<Admin />} />
-              <Route path="admin/add-edit-member" element={<AddEditMember />} />
-              <Route path="admin/add-edit-member/:id" element={<AddEditMember />} />
               <Route path="packages/add-package" element={<AddPackage />} />
               <Route path="packages/edit-package/:id" element={<EditPackage />} />
             </Route>

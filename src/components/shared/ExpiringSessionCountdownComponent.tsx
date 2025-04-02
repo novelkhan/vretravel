@@ -1,162 +1,196 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import sharedService from '../../services/SharedService';
-import { interval, Subscription } from 'rxjs';
+import accountService from '../../services/AccountService';
 
-// formatTime ফাংশনটি কম্পোনেন্ট বডির আগে ডিক্লেয়ার করা হয়েছে
-const formatTime = (seconds: number) => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${pad(minutes)}:${pad(remainingSeconds)}`;
-};
+interface ExpiringSessionState {
+  isOpen: boolean;
+}
 
-const pad = (value: number) => (value < 10 ? `0${value}` : value);
+const ExpiringSessionCountdownComponent: React.FC = () => {
+  const [state, setState] = useState<ExpiringSessionState>({ isOpen: false });
+  const [remainingTime, setRemainingTime] = useState(120);
+  const [displayTime, setDisplayTime] = useState('02:00');
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
 
-const ExpiringSessionCountdownComponent = () => {
-  const [targetTime, setTargetTime] = useState(5);
-  const [remainingTime, setRemainingTime] = useState(targetTime);
-  const [displayTime, setDisplayTime] = useState(formatTime(targetTime));
-  let countdownSubscription: Subscription | undefined;
+  const startCountdown = useCallback(() => {
+    console.log('Starting countdown...');
+    try {
+      setRemainingTime(120);
+      setDisplayTime(formatTime(120));
 
-  useEffect(() => {
-    const subscription = (time: number) => {
-      setTargetTime(time);
-      resetCountdown();
-      startCountdown();
-    };
-
-    sharedService.onModalOpened(subscription);
-
-    return () => stopCountdown();
-  }, []);
-
-  // Reset Countdown
-  const resetCountdown = () => {
-    stopCountdown();
-    setRemainingTime(targetTime);
-    setDisplayTime(formatTime(targetTime));
-  };
-
-  // Start Countdown
-  const startCountdown = () => {
-    stopCountdown();
-    countdownSubscription = interval(1000).subscribe(() => {
-      setRemainingTime((prev) => {
-        if (prev > 0) {
+      const id = setInterval(() => {
+        setRemainingTime((prev) => {
+          if (prev <= 0) {
+            console.log('Countdown finished, logging out...');
+            clearInterval(id);
+            setIntervalId(null);
+            sharedService.showNotification(false, 'Logged Out', 'You have been logged out due to inactivity');
+            logout();
+            return 0;
+          }
           const newTime = prev - 1;
           setDisplayTime(formatTime(newTime));
           return newTime;
-        } else {
-          stopCountdown();
-          sharedService.showNotification(
-            false,
-            'Logged Out',
-            'You have been logged out due to inactivity'
-          );
-          logout();
-          return 0;
-        }
-      });
-    });
-  };
+        });
+      }, 1000);
 
-  // Stop Countdown
-  const stopCountdown = () => {
-    countdownSubscription?.unsubscribe();
-    countdownSubscription = undefined;
-  };
+      setIntervalId(id);
+    } catch (error) {
+      console.error('Error in startCountdown:', error);
+    }
+  }, []);
 
-  // Logout Function
-  const logout = () => {
-    closeModal();
-    console.log('User logged out');
-    // TODO: Add actual logout logic here if needed
-  };
+  const stopCountdown = useCallback(() => {
+    console.log('Stopping countdown...');
+    try {
+      if (intervalId) {
+        clearInterval(intervalId);
+        setIntervalId(null);
+      }
+    } catch (error) {
+      console.error('Error in stopCountdown:', error);
+    }
+  }, [intervalId]);
 
-  // Resume Session
-  const resumeSession = () => {
-    stopCountdown();
-    resetCountdown();
-    closeModal();
-    console.log('Session resumed');
-    // TODO: Add actual session refresh logic here if needed
-  };
-
-  // Close Modal
-  const closeModal = () => {
-    const modalElement = document.getElementById('sessionModal');
-    if (modalElement) {
-      modalElement.classList.remove('show');
-      modalElement.style.display = 'none';
-      document.body.classList.remove('modal-open');
+  const formatTime = (seconds: number): string => {
+    try {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${pad(minutes)}:${pad(remainingSeconds)}`;
+    } catch (error) {
+      console.error('Error in formatTime:', error);
+      return '00:00';
     }
   };
 
+  const pad = (value: number): string => {
+    try {
+      return value < 10 ? `0${value}` : value.toString();
+    } catch (error) {
+      console.error('Error in pad:', error);
+      return '00';
+    }
+  };
+
+  const logout = () => {
+    console.log('Logout button clicked, logging out...');
+    try {
+      stopCountdown();
+      sharedService.closeExpiringSessionCountdown();
+      accountService.logout();
+    } catch (error) {
+      console.error('Error during logout:', error);
+      sharedService.showNotification(false, 'Error', 'Failed to log out. Please try again.');
+    }
+  };
+
+  const resumeSession = async () => {
+    console.log('Stay Logged In button clicked, resuming session...');
+    try {
+      stopCountdown();
+      sharedService.closeExpiringSessionCountdown();
+      const success = await accountService.refreshToken();
+      if (!success) {
+        console.warn('Token refresh failed, but user will not be logged out automatically.');
+        sharedService.showNotification(false, 'Session Error', 'Failed to refresh session. Please try logging in again.');
+      } else {
+        console.log('Session resumed successfully.');
+        sharedService.showNotification(true, 'Success', 'Session has been extended.');
+        // নতুন টাইমআউট শুরু করা
+        accountService.checkUserIdleTimeout();
+      }
+    } catch (error) {
+      console.error('Error during resumeSession:', error);
+      sharedService.showNotification(false, 'Error', 'An unexpected error occurred. Please try again.');
+    }
+  };
+
+  useEffect(() => {
+    console.log('Subscribing to expiringSession$...');
+    try {
+      const subscription = sharedService.expiringSession$.subscribe((newState) => {
+        console.log('New state received:', newState);
+        setState(newState);
+      });
+
+      return () => {
+        console.log('Unsubscribing from expiringSession$...');
+        subscription.unsubscribe();
+        stopCountdown();
+      };
+    } catch (error) {
+      console.error('Error in subscription useEffect:', error);
+    }
+  }, [stopCountdown]);
+
+  useEffect(() => {
+    console.log('Modal useEffect triggered with state.isOpen:', state.isOpen);
+    try {
+      if (state.isOpen) {
+        const modalElement = document.getElementById('expiringSessionModal');
+        console.log('Modal element found:', modalElement);
+        console.log('window.bootstrap:', (window as any).bootstrap);
+        console.log('window.bootstrap.Modal:', (window as any).bootstrap?.Modal);
+        if (modalElement && (window as any).bootstrap?.Modal) {
+          console.log('Opening modal...');
+          const modal = new (window as any).bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false,
+          });
+          modal.show();
+          startCountdown();
+
+          return () => {
+            console.log('Hiding modal on cleanup...');
+            modal.hide();
+            stopCountdown();
+          };
+        } else {
+          console.error('Bootstrap Modal is not available. Ensure Bootstrap JS is loaded.');
+          if (!modalElement) {
+            console.error('Modal element not found. Ensure the modal HTML is rendered correctly.');
+          }
+        }
+      } else {
+        console.log('Closing modal...');
+        stopCountdown();
+        const modalElement = document.getElementById('expiringSessionModal');
+        if (modalElement && (window as any).bootstrap?.Modal) {
+          const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
+          modal?.hide();
+        }
+      }
+    } catch (error) {
+      console.error('Error in modal useEffect:', error);
+    }
+  }, [state.isOpen, startCountdown, stopCountdown]);
+
+  if (!state.isOpen) {
+    console.log('Modal is not open, returning null...');
+    return null;
+  }
+
+  console.log('Rendering modal with displayTime:', displayTime);
   return (
-    <div id="sessionModal" className="modal-overlay" style={{ display: 'none' }}>
-      <div
-        className="modal-container"
-        style={{
-          borderTop: '5px solid orange',
-          background: '#fff',
-          padding: '1rem',
-          borderRadius: '8px',
-          width: '400px',
-        }}
-      >
-        <div
-          className="modal-header"
-          style={{
-            backgroundColor: 'red',
-            color: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            padding: '10px',
-          }}
-        >
-          <h5 style={{ margin: 0 }}>Session Timeout Warning</h5>
-        </div>
-        <div className="modal-body" style={{ padding: '1rem' }}>
-          <p style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
-            Your session is about to time out, do you want to continue your session?{' '}
-            <strong>{displayTime}</strong> time left.
-          </p>
-        </div>
-        <div
-          className="modal-footer"
-          style={{
-            textAlign: 'right',
-            padding: '10px',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '10px',
-          }}
-        >
-          <button
-            onClick={logout}
-            style={{
-              backgroundColor: 'red',
-              color: 'white',
-              padding: '8px 16px',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            Logout
-          </button>
-          <button
-            onClick={resumeSession}
-            style={{
-              backgroundColor: 'green',
-              color: 'white',
-              padding: '8px 16px',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            Stay Logged In
-          </button>
+    <div className="modal fade" id="expiringSessionModal" tabIndex={-1} aria-labelledby="expiringSessionModalLabel" aria-hidden="true">
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className="modal-header bg-danger text-white">
+            <h4 className="modal-title">Session Timeout Warning</h4>
+          </div>
+          <div className="modal-body">
+            <p style={{ fontSize: '1.5rem' }}>
+              Your session is about to time out, do you want to continue your session? {displayTime} time left
+            </p>
+          </div>
+          <div className="modal-footer">
+            <button className="btn btn-danger" onClick={logout}>
+              Logout
+            </button>
+            <button className="btn btn-success" onClick={resumeSession}>
+              Stay Logged In
+            </button>
+          </div>
         </div>
       </div>
     </div>

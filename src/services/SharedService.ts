@@ -1,45 +1,62 @@
+import { BehaviorSubject } from 'rxjs';
+
+interface NotificationState {
+  isOpen: boolean;
+  isSuccess: boolean;
+  title: string;
+  message: string;
+}
+
+interface ExpiringSessionState {
+  isOpen: boolean;
+}
+
 class SharedService {
-  displayingExpiringSessionModal = false;
-  private modalOpenedCallbacks: ((targetTime: number) => void)[] = [];
-  private notificationCallbacks: ((data: { isSuccess: boolean; title: string; message: string; callback?: () => void }) => void)[] = [];
+  private notificationSubject = new BehaviorSubject<NotificationState>({
+    isOpen: false,
+    isSuccess: true,
+    title: '',
+    message: '',
+  });
 
-  // Subscribe to Expiring Session Modal
-  onModalOpened(callback: (targetTime: number) => void) {
-    this.modalOpenedCallbacks.push(callback);
+  private expiringSessionSubject = new BehaviorSubject<ExpiringSessionState>({
+    isOpen: false,
+  });
+
+  public notification$ = this.notificationSubject.asObservable();
+  public expiringSession$ = this.expiringSessionSubject.asObservable();
+
+  public displayingExpiringSessionModal = false;
+
+  showNotification(isSuccess: boolean, title: string, message: string) {
+    console.log('Showing notification:', { isSuccess, title, message });
+    this.notificationSubject.next({
+      isOpen: true,
+      isSuccess,
+      title,
+      message,
+    });
   }
 
-  // Subscribe to Notification Modal
-  onNotification(callback: (data: { isSuccess: boolean; title: string; message: string; callback?: () => void }) => void) {
-    this.notificationCallbacks.push(callback);
+  closeNotification() {
+    console.log('Closing notification...');
+    this.notificationSubject.next({
+      ...this.notificationSubject.getValue(),
+      isOpen: false,
+    });
   }
 
-  // Show Notification Modal
-  showNotification(isSuccess: boolean, title: string, message: string, callback?: () => void) {
-    this.notificationCallbacks.forEach(cb => cb({ isSuccess, title, message, callback }));
-    this.openNotificationModal();
+  openExpiringSessionCountdown() {
+    console.log('Opening expiring session countdown...');
+    this.expiringSessionSubject.next({ isOpen: true });
   }
 
-  private openNotificationModal() {
-    const modalElement = document.getElementById('notificationModal');
-    if (modalElement) {
-      modalElement.classList.add('show');
-      modalElement.style.display = 'block';
-      document.body.classList.add('modal-open');
-    }
-  }
-
-  // Open Expiring Session Modal
-  openExpiringSessionCountdown(targetTime: number = 5) {
-    this.modalOpenedCallbacks.forEach(cb => cb(targetTime));
-    const modalElement = document.getElementById('sessionModal');
-    if (modalElement) {
-      modalElement.classList.add('show');
-      modalElement.style.display = 'block';
-      document.body.classList.add('modal-open');
-    }
+  closeExpiringSessionCountdown() {
+    console.log('Closing expiring session countdown...');
+    this.expiringSessionSubject.next({ isOpen: false });
+    this.displayingExpiringSessionModal = false;
   }
 }
 
-// Singleton Instance
 const sharedService = new SharedService();
 export default sharedService;
