@@ -18,7 +18,7 @@ const Navbar: React.FC = () => {
       <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
         <div className="container">
           <a className="navbar-brand">
-            <img src="/assets/images/logo.png" className="me-3" alt="Logo" />
+            <img src="..\..\src\assets\images\logo.png" className="me-3" alt="Logo" />
           </a>
           <button
             className="navbar-toggler"
