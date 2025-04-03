@@ -4,7 +4,6 @@ import { Modal, Button } from 'react-bootstrap';
 import adminService from '../../services/AdminService';
 import sharedService from '../../services/SharedService';
 import { MemberView } from '../../models/admin';
-import './Admin.css';
 
 const AdminPage: React.FC = () => {
   const [members, setMembers] = useState<MemberView[]>([]);
@@ -55,7 +54,7 @@ const AdminPage: React.FC = () => {
       try {
         await adminService.deleteMember(memberToDelete.id);
         sharedService.showNotification(
-          true,
+          false,
           'Deleted',
           `Member of ${memberToDelete.userName} has been deleted!`
         );
@@ -181,7 +180,7 @@ const AdminPage: React.FC = () => {
       <Modal show={showModal} onHide={declineDelete} dialogClassName="modal-sm">
         <Modal.Body className="text-center">
           <p>Are you sure you want to delete {memberToDelete?.userName}?</p>
-          <Button variant="secondary" onClick={confirmDelete} className="me-2">
+          <Button variant="secondary" onClick={confirmDelete} className="me-2 text-bg-danger">
             Yes
           </Button>
           <Button variant="primary" onClick={declineDelete}>
