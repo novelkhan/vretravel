@@ -28,13 +28,19 @@ class SharedService {
       isSuccess,
       title,
       message,
-      callback
+      callback,
     });
   }
 
   closeNotification() {
-    const current = this.notificationSubject.getValue();
-    this.notificationSubject.next({ ...current, isOpen: false });
+    const currentState = this.notificationSubject.getValue();
+    if (currentState.callback) {
+      currentState.callback();
+    }
+    this.notificationSubject.next({
+      ...currentState,
+      isOpen: false,
+    });
   }
 
   openExpiringSessionCountdown(targetTime: number = 5) {

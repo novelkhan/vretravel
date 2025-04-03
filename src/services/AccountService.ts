@@ -153,7 +153,7 @@ checkUserIdleTimeout() {
           console.log('Timeout reached, opening expiring session modal...');
           sharedService.displayingExpiringSessionModal = true;
           sharedService.openExpiringSessionCountdown(5); // 5 সেকেন্ডের কাউন্টডাউন
-        }, 10 * 1000); // 10 সেকেন্ড (10000 মিলিসেকেন্ড)
+        }, 10 * 60 * 1000); // 10 সেকেন্ড (10000 মিলিসেকেন্ড)
       } else {
         console.log('Expiring session modal already displaying...');
       }
