@@ -5,7 +5,7 @@ import accountService from '../../services/AccountService';
 const ExpiringSessionCountdownComponent: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<number>(5);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const modalRef = useRef<any>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // টাইমার ফরম্যাট ফাংশন
   const formatTime = (seconds: number): string => {
@@ -36,22 +36,27 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
 
   // মডাল ইনিশিয়ালাইজেশন
   useEffect(() => {
-    const modalElement = document.getElementById('sessionModal');
-    if (modalElement) {
-      modalRef.current = new (window as any).bootstrap.Modal(modalElement);
-    }
+    if (!modalRef.current) return;
+
+    const modalElement = modalRef.current;
+    const modal = new (window as any).bootstrap.Modal(modalElement, {
+      backdrop: 'static',
+      keyboard: false
+    });
 
     const subscription = sharedService.modalOpened$.subscribe((time: number) => {
       startTimer(time);
-      if (modalRef.current) {
-        modalRef.current.show();
-      }
+      modal.show();
     });
 
     return () => {
       subscription.unsubscribe();
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      // মেমোরি লিক প্রতিরোধ
+      if (modal && typeof modal.dispose === 'function') {
+        modal.dispose();
       }
     };
   }, []);
@@ -64,7 +69,8 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
 
   const logout = () => {
     if (modalRef.current) {
-      modalRef.current.hide();
+      const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
+      modal?.hide();
     }
     accountService.logout();
   };
@@ -75,17 +81,24 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
       clearInterval(timerRef.current);
     }
     if (modalRef.current) {
-      modalRef.current.hide();
+      const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
+      modal?.hide();
     }
     await accountService.refreshToken();
   };
 
   return (
-    <div className="modal fade" id="sessionModal" tabIndex={-1} aria-hidden="true">
+    <div 
+      className="modal fade" 
+      ref={modalRef}
+      tabIndex={-1}
+      role="dialog"
+      aria-labelledby="sessionModalLabel"
+    >
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header bg-danger text-white">
-            <h5 className="modal-title">Session Timeout Warning</h5>
+            <h5 className="modal-title" id="sessionModalLabel">Session Timeout Warning</h5>
           </div>
           <div className="modal-body">
             <p style={{ fontSize: '1.5rem' }}>
