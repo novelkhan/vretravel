@@ -31,16 +31,32 @@ class AccountService {
   async refreshToken() {
     console.log('Refreshing token...');
     try {
-      const response = await axios.post<User>(`${API_URL}/refresh-token`, {}, { withCredentials: true });
+      const response = await axios.post<User>(
+        `${API_URL}/refresh-token`, 
+        {}, 
+        {
+          withCredentials: true, // কুকি সেন্ড করার জন্য
+          headers: {
+            'Authorization': `Bearer ${this.getJWT()}` // এক্সেস টোকেন হেডারে
+          }
+        }
+      );
+  
       if (response.data) {
         this.setUser(response.data);
-        console.log('Token refreshed successfully:', response.data);
+        console.log('Token refreshed successfully');
         return true;
       }
       return false;
     } catch (error: any) {
       console.error('Error refreshing token:', error);
-      sharedService.showNotification(false, 'Error', error.response?.data || 'Failed to refresh token');
+      
+      // 401 এর ক্ষেত্রে অটো লগআউট
+      if (error.response?.status === 401) {
+        this.logout();
+        sharedService.showNotification(false, 'Session Expired', 'Please login again');
+      }
+      
       return false;
     }
   }

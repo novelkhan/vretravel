@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from 'react';
-import { Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './components/Home';
@@ -9,8 +9,8 @@ import NotFound from './components/shared/NotFound';
 import { RouteGuard } from './guards/RouteGuard';
 import accountService from './services/AccountService';
 import sharedService from './services/SharedService';
-import { AccountProvider } from './context/AccountContext';
 
+// Lazy-loaded components
 const Admin = React.lazy(() => import('./components/admin/Admin'));
 const AddEditMember = React.lazy(() => import('./components/admin/AddEditMember'));
 const Customer = React.lazy(() => import('./components/Customer'));
@@ -25,14 +25,12 @@ const Register = React.lazy(() => import('./components/account/Register'));
 
 const AppLayout = () => {
   const checkUserActivity = () => {
-    console.log('User activity detected, checking idle timeout...');
     accountService.checkUserIdleTimeout();
   };
 
   useEffect(() => {
     window.addEventListener('keydown', checkUserActivity);
     window.addEventListener('mousedown', checkUserActivity);
-
     return () => {
       window.removeEventListener('keydown', checkUserActivity);
       window.removeEventListener('mousedown', checkUserActivity);
@@ -59,7 +57,7 @@ const App = () => {
       accountService.refreshUser(jwt).catch((error) => {
         accountService.logout();
         if (error.response?.status === 401) {
-          sharedService.showNotification(false, 'Account blocked', error.response?.data || 'Unauthorized');
+          sharedService.showNotification(false, 'Session Expired', 'Please login again');
         }
       });
     } else {
@@ -68,8 +66,13 @@ const App = () => {
   }, []);
 
   return (
-    <AccountProvider>
-      <Suspense fallback={<div>Loading...</div>}>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
+      <Suspense fallback={<div className="text-center mt-5">Loading...</div>}>
         <Routes>
           <Route element={<AppLayout />}>
             <Route index element={<Home />} />
@@ -97,7 +100,7 @@ const App = () => {
           </Route>
         </Routes>
       </Suspense>
-    </AccountProvider>
+    </Router>
   );
 };
 
