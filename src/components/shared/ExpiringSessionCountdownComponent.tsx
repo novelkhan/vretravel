@@ -1,104 +1,97 @@
-// src/components/ExpiringSessionCountdownComponent.ts
 import React, { useEffect, useState, useRef } from 'react';
 import sharedService from '../../services/SharedService';
-import { interval } from 'rxjs';
-import { Subscription } from 'rxjs';
-import accountService from '../../services/AccountService'; // ধরে নিচ্ছি এটা আপনার কাছে আছে
+import accountService from '../../services/AccountService';
 
 const ExpiringSessionCountdownComponent: React.FC = () => {
+  const [timeLeft, setTimeLeft] = useState<number>(5);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const modalRef = useRef<any>(null);
+
+  // টাইমার ফরম্যাট ফাংশন
   const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${pad(minutes)}:${pad(remainingSeconds)}`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const pad = (value: number): string => {
-    return value < 10 ? `0${value}` : value.toString();
+  // টাইমার স্টার্ট/রিসেট ফাংশন
+  const startTimer = (duration: number) => {
+    setTimeLeft(duration);
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prevTime => {
+        if (prevTime <= 1) {
+          clearInterval(timerRef.current as NodeJS.Timeout);
+          handleTimeout();
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
   };
 
-  const [targetTime, setTargetTime] = useState<number>(5);
-  const [remainingTime, setRemainingTime] = useState<number>(targetTime);
-  const [displayTime, setDisplayTime] = useState<string>(formatTime(targetTime));
-  const countdownSubscription = useRef<Subscription | undefined>(undefined);
-
+  // মডাল ইনিশিয়ালাইজেশন
   useEffect(() => {
-    const modalSubscription = sharedService.modalOpened$.subscribe((newTargetTime: number) => {
-      setTargetTime(newTargetTime);
-      resetCountdown();
-      startCountdown();
+    const modalElement = document.getElementById('sessionModal');
+    if (modalElement) {
+      modalRef.current = new (window as any).bootstrap.Modal(modalElement);
+    }
+
+    const subscription = sharedService.modalOpened$.subscribe((time: number) => {
+      startTimer(time);
+      if (modalRef.current) {
+        modalRef.current.show();
+      }
     });
 
     return () => {
-      modalSubscription.unsubscribe();
-      stopCountdown();
+      subscription.unsubscribe();
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
   }, []);
 
-  const resetCountdown = () => {
-    stopCountdown();
-    setRemainingTime(targetTime);
-    setDisplayTime(formatTime(targetTime));
-  };
-
-  const startCountdown = () => {
-    stopCountdown();
-    countdownSubscription.current = interval(1000).subscribe(() => {
-      setRemainingTime((prev) => {
-        if (prev > 0) {
-          const newTime = prev - 1;
-          setDisplayTime(formatTime(newTime));
-          return newTime;
-        } else {
-          stopCountdown();
-          sharedService.showNotification(false, 'Logged Out', 'You have been logged out due to inactivity');
-          logout();
-          return 0;
-        }
-      });
-    });
-  };
-
-  const stopCountdown = () => {
-    if (countdownSubscription.current) {
-      countdownSubscription.current.unsubscribe();
-      countdownSubscription.current = undefined;
-    }
+  const handleTimeout = () => {
+    sharedService.displayingExpiringSessionModal = false;
+    sharedService.showNotification(false, 'Logged Out', 'You have been logged out due to inactivity');
+    logout();
   };
 
   const logout = () => {
-    closeModal();
-    accountService.logout(); // AccountService থেকে কল করা হচ্ছে
-  };
-
-  const closeModal = () => {
-    sharedService.displayingExpiringSessionModal = false;
-    const modalElement = document.getElementById('sessionModal');
-    if (modalElement) {
-      const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
-      modal.hide();
+    if (modalRef.current) {
+      modalRef.current.hide();
     }
+    accountService.logout();
   };
 
-  const resumeSession = () => {
-    stopCountdown();
-    resetCountdown();
-    closeModal();
-    accountService.refreshToken(); // AccountService থেকে কল করা হচ্ছে
+  const resumeSession = async () => {
+    sharedService.displayingExpiringSessionModal = false;
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    if (modalRef.current) {
+      modalRef.current.hide();
+    }
+    await accountService.refreshToken();
   };
-
-  if (!sharedService.displayingExpiringSessionModal) return null;
 
   return (
-    <div className="modal fade" id="sessionModal" tabIndex={-1} aria-labelledby="sessionModalLabel" aria-hidden="true">
+    <div className="modal fade" id="sessionModal" tabIndex={-1} aria-hidden="true">
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header bg-danger text-white">
             <h5 className="modal-title">Session Timeout Warning</h5>
-            <button type="button" className="btn-close" onClick={closeModal} aria-label="Close"></button>
           </div>
           <div className="modal-body">
             <p style={{ fontSize: '1.5rem' }}>
-              Your session is about to time out, do you want to continue your session? {displayTime} time left
+              Your session is about to time out, do you want to continue your session?
+              <br />
+              <strong>{formatTime(timeLeft)}</strong> time left
             </p>
           </div>
           <div className="modal-footer">

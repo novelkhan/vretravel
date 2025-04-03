@@ -1,3 +1,4 @@
+// src/services/AccountService.ts
 import axios from 'axios';
 import { environment } from '../environments';
 import { jwtDecode } from 'jwt-decode';
@@ -34,13 +35,13 @@ class AccountService {
       if (response.data) {
         this.setUser(response.data);
         console.log('Token refreshed successfully:', response.data);
-        return true; // সফল হলে true রিটার্ন
+        return true;
       }
       return false;
     } catch (error: any) {
       console.error('Error refreshing token:', error);
       sharedService.showNotification(false, 'Error', error.response?.data || 'Failed to refresh token');
-      return false; // ব্যর্থ হলে false রিটার্ন, লগ আউট করা হবে না
+      return false;
     }
   }
 
@@ -122,27 +123,31 @@ class AccountService {
     return null;
   }
 
-  checkUserIdleTimeout() {
-    console.log('Checking user idle timeout...');
-    clearTimeout(this.timeoutId);
+  // ... পূর্বের কোড অপরিবর্তিত ...
 
-    this.user$.pipe(take(1)).subscribe(user => {
-      if (user) {
-        if (!sharedService.displayingExpiringSessionModal) {
-          console.log('Setting timeout for 10 minutes...');
-          this.timeoutId = setTimeout(() => {
-            console.log('Timeout reached, opening expiring session modal...');
-            sharedService.displayingExpiringSessionModal = true;
-            sharedService.openExpiringSessionCountdown();
-          }, 10 * 1000); // ১০ মিনিট পরে টাইমআউট
-        } else {
-          console.log('Expiring session modal already displaying...');
-        }
+checkUserIdleTimeout() {
+  console.log('Checking user idle timeout...');
+  clearTimeout(this.timeoutId);
+
+  this.user$.pipe(take(1)).subscribe(user => {
+    if (user) {
+      if (!sharedService.displayingExpiringSessionModal) {
+        console.log('Setting timeout for 10 seconds...');
+        this.timeoutId = setTimeout(() => {
+          console.log('Timeout reached, opening expiring session modal...');
+          sharedService.displayingExpiringSessionModal = true;
+          sharedService.openExpiringSessionCountdown(5); // 5 সেকেন্ডের কাউন্টডাউন
+        }, 10 * 1000); // 10 সেকেন্ড (10000 মিলিসেকেন্ড)
       } else {
-        console.log('No user logged in, skipping idle timeout...');
+        console.log('Expiring session modal already displaying...');
       }
-    });
-  }
+    } else {
+      console.log('No user logged in, skipping idle timeout...');
+    }
+  });
+}
+
+// ... বাকি কোড অপরিবর্তিত ...
 
   private setUser(user: User) {
     this.stopRefreshTokenTimer();
