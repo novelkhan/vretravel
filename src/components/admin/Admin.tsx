@@ -81,7 +81,7 @@ const AdminPage: React.FC = () => {
       );
       setMembers(updatedMembers);
       sharedService.showNotification(
-        true,
+        locking ? false : true,
         locking ? 'Locked' : 'Unlocked',
         `${member.userName} member has been ${locking ? 'locked' : 'unlocked'}`
       );
