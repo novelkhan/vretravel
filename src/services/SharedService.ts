@@ -1,3 +1,4 @@
+// src/services/SharedService.ts
 import { BehaviorSubject, Subject } from 'rxjs';
 
 interface NotificationState {
@@ -21,6 +22,7 @@ class SharedService {
   public notification$ = this.notificationSubject.asObservable();
   public modalOpened$ = this.modalOpenedSubject.asObservable();
   public displayingExpiringSessionModal = false;
+  public isAutoLogout: boolean = false; // নতুন ফ্ল্যাগ যোগ করা
 
   showNotification(isSuccess: boolean, title: string, message: string, callback?: () => void) {
     this.notificationSubject.next({
@@ -41,6 +43,7 @@ class SharedService {
       ...currentState,
       isOpen: false,
     });
+    this.isAutoLogout = false; // নোটিফিকেশন বন্ধ হলে ফ্ল্যাগ রিসেট
   }
 
   openExpiringSessionCountdown(targetTime: number = 5) {

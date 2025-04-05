@@ -1,3 +1,4 @@
+// ExpiringSessionCountdownComponent.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import sharedService from '../../services/SharedService';
 import accountService from '../../services/AccountService';
@@ -7,14 +8,12 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // টাইমার ফরম্যাট ফাংশন
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // টাইমার স্টার্ট/রিসেট ফাংশন
   const startTimer = (duration: number) => {
     setTimeLeft(duration);
     
@@ -34,7 +33,6 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
     }, 1000);
   };
 
-  // মডাল ইনিশিয়ালাইজেশন
   useEffect(() => {
     if (!modalRef.current) return;
 
@@ -54,23 +52,49 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      // মেমোরি লিক প্রতিরোধ
       if (modal && typeof modal.dispose === 'function') {
         modal.dispose();
+        const modalElement = modalRef.current;
+        if (modalElement) {
+          modalElement.classList.remove('show');
+          modalElement.style.display = 'none';
+          modalElement.removeAttribute('aria-modal');
+          modalElement.setAttribute('aria-hidden', 'true');
+        }
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0px';
       }
     };
   }, []);
 
   const handleTimeout = () => {
     sharedService.displayingExpiringSessionModal = false;
-    sharedService.showNotification(false, 'Logged Out', 'You have been logged out due to inactivity');
+    sharedService.isAutoLogout = true;
     logout();
   };
 
   const logout = () => {
     if (modalRef.current) {
       const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
-      modal?.hide();
+      if (modal) {
+        modal.hide();
+        modal.dispose();
+        const modalElement = modalRef.current;
+        if (modalElement) {
+          modalElement.classList.remove('show');
+          modalElement.style.display = 'none';
+          modalElement.removeAttribute('aria-modal');
+          modalElement.setAttribute('aria-hidden', 'true');
+        }
+      }
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '0px';
     }
     accountService.logout();
   };
@@ -82,9 +106,29 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
     }
     if (modalRef.current) {
       const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
-      modal?.hide();
+      if (modal) {
+        modal.hide();
+        modal.dispose();
+        const modalElement = modalRef.current;
+        if (modalElement) {
+          modalElement.classList.remove('show');
+          modalElement.style.display = 'none';
+          modalElement.removeAttribute('aria-modal');
+          modalElement.setAttribute('aria-hidden', 'true');
+        }
+      }
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '0px';
     }
-    await accountService.refreshToken();
+    try {
+      await accountService.refreshToken();
+    } catch (error) {
+      console.error('Failed to refresh token in resumeSession:', error);
+      sharedService.showNotification(false, 'Error', 'Something went wrong. Please try again.');
+    }
   };
 
   return (

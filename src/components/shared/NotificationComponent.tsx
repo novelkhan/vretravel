@@ -1,7 +1,7 @@
+// src/components/shared/NotificationComponent.tsx
 import React, { useEffect, useState } from 'react';
 import sharedService from '../../services/SharedService';
 
-// Window ইন্টারফেস এক্সটেন্ড করুন
 declare global {
   interface Window {
     bootstrap?: {
@@ -49,7 +49,36 @@ const NotificationComponent: React.FC = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    const isAutoLogout = localStorage.getItem('autoLogout');
+    if (isAutoLogout === 'true' && window.bootstrap) {
+      sharedService.showNotification(
+        false,
+        'Logged Out',
+        'You have been logged out due to inactivity'
+      );
+      localStorage.removeItem('autoLogout');
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      // ক্লিনআপের সময় মডাল ডিসপোজ করা
+      if (window.bootstrap) {
+        const modalElement = document.getElementById('notificationModal');
+        if (modalElement) {
+          const modal = window.bootstrap.Modal.getInstance(modalElement);
+          if (modal) {
+            modal.hide();
+            modal.dispose();
+          }
+        }
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          backdrop.remove();
+        }
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+      }
+    };
   }, []);
 
   const handleClose = () => {
@@ -62,8 +91,23 @@ const NotificationComponent: React.FC = () => {
       const modalElement = document.getElementById('notificationModal');
       if (modalElement) {
         const modal = window.bootstrap.Modal.getInstance(modalElement);
-        modal?.hide();
+        if (modal) {
+          modal.hide();
+          modal.dispose();
+        }
+        // মডাল এলিমেন্ট থেকে ক্লাস রিমুভ করা
+        modalElement.classList.remove('show');
+        modalElement.style.display = 'none';
+        modalElement.removeAttribute('aria-modal');
+        modalElement.setAttribute('aria-hidden', 'true');
       }
+      // সব মডাল ব্যাকড্রপ রিমুভ করা
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+      // body থেকে modal-open ক্লাস রিমুভ করা
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = 'auto';
+      document.body.style.paddingRight = '0px';
     }
   };
 

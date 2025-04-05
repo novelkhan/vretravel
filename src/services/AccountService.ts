@@ -35,9 +35,9 @@ class AccountService {
         `${API_URL}/refresh-token`, 
         {}, 
         {
-          withCredentials: true, // কুকি সেন্ড করার জন্য
+          withCredentials: true,
           headers: {
-            'Authorization': `Bearer ${this.getJWT()}` // এক্সেস টোকেন হেডারে
+            'Authorization': `Bearer ${this.getJWT()}`
           }
         }
       );
@@ -50,13 +50,10 @@ class AccountService {
       return false;
     } catch (error: any) {
       console.error('Error refreshing token:', error);
-      
-      // 401 এর ক্ষেত্রে অটো লগআউট
       if (error.response?.status === 401) {
         this.logout();
         sharedService.showNotification(false, 'Session Expired', 'Please login again');
       }
-      
       return false;
     }
   }
@@ -124,6 +121,18 @@ class AccountService {
       this.userSubject.next(null);
       this.stopRefreshTokenTimer();
       clearTimeout(this.timeoutId);
+
+      if (sharedService.isAutoLogout) {
+        localStorage.setItem('autoLogout', 'true');
+        sharedService.showNotification(
+          false,
+          'Logged Out',
+          'You have been logged out due to inactivity'
+        );
+      } else {
+        localStorage.removeItem('autoLogout');
+      }
+
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
@@ -139,31 +148,27 @@ class AccountService {
     return null;
   }
 
-  // ... পূর্বের কোড অপরিবর্তিত ...
+  checkUserIdleTimeout() {
+    console.log('Checking user idle timeout...');
+    clearTimeout(this.timeoutId);
 
-checkUserIdleTimeout() {
-  console.log('Checking user idle timeout...');
-  clearTimeout(this.timeoutId);
-
-  this.user$.pipe(take(1)).subscribe(user => {
-    if (user) {
-      if (!sharedService.displayingExpiringSessionModal) {
-        console.log('Setting timeout for 10 seconds...');
-        this.timeoutId = setTimeout(() => {
-          console.log('Timeout reached, opening expiring session modal...');
-          sharedService.displayingExpiringSessionModal = true;
-          sharedService.openExpiringSessionCountdown(5); // 5 সেকেন্ডের কাউন্টডাউন
-        }, 10 * 60 * 1000); // 10 সেকেন্ড (10000 মিলিসেকেন্ড)
+    this.user$.pipe(take(1)).subscribe(user => {
+      if (user) {
+        if (!sharedService.displayingExpiringSessionModal) {
+          console.log('Setting timeout for 10 seconds...');
+          this.timeoutId = setTimeout(() => {
+            console.log('Timeout reached, opening expiring session modal...');
+            sharedService.displayingExpiringSessionModal = true;
+            sharedService.openExpiringSessionCountdown(5);
+          }, 10 * 1000); // টেস্টিংয়ের জন্য 10 সেকেন্ড
+        } else {
+          console.log('Expiring session modal already displaying...');
+        }
       } else {
-        console.log('Expiring session modal already displaying...');
+        console.log('No user logged in, skipping idle timeout...');
       }
-    } else {
-      console.log('No user logged in, skipping idle timeout...');
-    }
-  });
-}
-
-// ... বাকি কোড অপরিবর্তিত ...
+    });
+  }
 
   private setUser(user: User) {
     this.stopRefreshTokenTimer();
@@ -190,5 +195,22 @@ checkUserIdleTimeout() {
   }
 }
 
-const accountService = new AccountService();
+// AccountService ইন্টারফেস ডিফাইন করা
+export interface AccountServiceInterface {
+  getCurrentUser: () => User | null;
+  refreshToken: () => Promise<boolean>;
+  refreshUser: (jwt: string | null) => Promise<void>;
+  login: (model: Login) => Promise<void>;
+  register: (model: Register) => Promise<any>;
+  confirmEmail: (model: ConfirmEmail) => Promise<any>;
+  resendEmailConfirmationLink: (email: string) => Promise<any>;
+  forgotUsernameOrPassword: (email: string) => Promise<any>;
+  resetPassword: (model: ResetPassword) => Promise<any>;
+  logout: () => void;
+  getJWT: () => string | null;
+  checkUserIdleTimeout: () => void;
+  user$: import('rxjs').Observable<User | null>;
+}
+
+const accountService: AccountServiceInterface = new AccountService();
 export default accountService;
