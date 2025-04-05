@@ -53,19 +53,22 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
         clearInterval(timerRef.current);
       }
       if (modal && typeof modal.dispose === 'function') {
-        modal.dispose();
-        const modalElement = modalRef.current;
-        if (modalElement) {
-          modalElement.classList.remove('show');
-          modalElement.style.display = 'none';
-          modalElement.removeAttribute('aria-modal');
-          modalElement.setAttribute('aria-hidden', 'true');
+        modal.hide();
+        // ফোকাস রিমুভ করা
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
         }
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => backdrop.remove());
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = 'auto';
-        document.body.style.paddingRight = '0px';
+        setTimeout(() => {
+          modal.dispose();
+          const backdrops = document.querySelectorAll('.modal-backdrop');
+          backdrops.forEach(backdrop => backdrop.remove());
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = 'auto';
+          document.body.style.paddingRight = '0px';
+          if (modalRef.current) {
+            modalRef.current.removeAttribute('aria-hidden');
+          }
+        }, 500);
       }
     };
   }, []);
@@ -80,21 +83,35 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
     if (modalRef.current) {
       const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
       if (modal) {
+        // ফোকাস রিমুভ করা
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
         modal.hide();
-        modal.dispose();
-        const modalElement = modalRef.current;
-        if (modalElement) {
-          modalElement.classList.remove('show');
-          modalElement.style.display = 'none';
-          modalElement.removeAttribute('aria-modal');
-          modalElement.setAttribute('aria-hidden', 'true');
+        setTimeout(() => {
+          modal.dispose();
+          const backdrops = document.querySelectorAll('.modal-backdrop');
+          backdrops.forEach(backdrop => backdrop.remove());
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = 'auto';
+          document.body.style.paddingRight = '0px';
+          if (modalRef.current) {
+            modalRef.current.removeAttribute('aria-hidden');
+          }
+        }, 500);
+      } else {
+        // যদি modal ইন্সট্যান্স না থাকে, ম্যানুয়ালি বন্ধ করা
+        modalRef.current.classList.remove('show');
+        modalRef.current.style.display = 'none';
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0px';
+        if (modalRef.current) {
+          modalRef.current.removeAttribute('aria-hidden');
         }
       }
-      const backdrops = document.querySelectorAll('.modal-backdrop');
-      backdrops.forEach(backdrop => backdrop.remove());
-      document.body.classList.remove('modal-open');
-      document.body.style.overflow = 'auto';
-      document.body.style.paddingRight = '0px';
     }
     accountService.logout();
   };
@@ -107,21 +124,35 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
     if (modalRef.current) {
       const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
       if (modal) {
+        // ফোকাস রিমুভ করা
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
         modal.hide();
-        modal.dispose();
-        const modalElement = modalRef.current;
-        if (modalElement) {
-          modalElement.classList.remove('show');
-          modalElement.style.display = 'none';
-          modalElement.removeAttribute('aria-modal');
-          modalElement.setAttribute('aria-hidden', 'true');
+        setTimeout(() => {
+          modal.dispose();
+          const backdrops = document.querySelectorAll('.modal-backdrop');
+          backdrops.forEach(backdrop => backdrop.remove());
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = 'auto';
+          document.body.style.paddingRight = '0px';
+          if (modalRef.current) {
+            modalRef.current.removeAttribute('aria-hidden');
+          }
+        }, 500);
+      } else {
+        // যদি modal ইন্সট্যান্স না থাকে, ম্যানুয়ালি বন্ধ করা
+        modalRef.current.classList.remove('show');
+        modalRef.current.style.display = 'none';
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0px';
+        if (modalRef.current) {
+          modalRef.current.removeAttribute('aria-hidden');
         }
       }
-      const backdrops = document.querySelectorAll('.modal-backdrop');
-      backdrops.forEach(backdrop => backdrop.remove());
-      document.body.classList.remove('modal-open');
-      document.body.style.overflow = 'auto';
-      document.body.style.paddingRight = '0px';
     }
     try {
       await accountService.refreshToken();
@@ -138,6 +169,7 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
       tabIndex={-1}
       role="dialog"
       aria-labelledby="sessionModalLabel"
+      aria-hidden="true"
     >
       <div className="modal-dialog">
         <div className="modal-content">
