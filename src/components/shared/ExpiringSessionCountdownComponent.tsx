@@ -7,14 +7,12 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // টাইমার ফরম্যাট ফাংশন
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // টাইমার স্টার্ট/রিসেট ফাংশন
   const startTimer = (duration: number) => {
     setTimeLeft(duration);
     
@@ -34,7 +32,6 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
     }, 1000);
   };
 
-  // মডাল ইনিশিয়ালাইজেশন
   useEffect(() => {
     if (!modalRef.current) return;
 
@@ -54,7 +51,6 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      // মেমোরি লিক প্রতিরোধ
       if (modal && typeof modal.dispose === 'function') {
         modal.dispose();
       }
@@ -63,7 +59,7 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
 
   const handleTimeout = () => {
     sharedService.displayingExpiringSessionModal = false;
-    sharedService.isAutoLogout = true; // ফ্ল্যাগ সেট করুন
+    sharedService.isAutoLogout = true;
     logout();
   };
 

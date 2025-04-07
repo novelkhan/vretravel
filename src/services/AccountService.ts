@@ -1,4 +1,3 @@
-// src/services/AccountService.ts
 import axios from 'axios';
 import { environment } from '../environments';
 import { jwtDecode } from 'jwt-decode';
@@ -35,9 +34,9 @@ class AccountService {
         `${API_URL}/refresh-token`, 
         {}, 
         {
-          withCredentials: true, // কুকি সেন্ড করার জন্য
+          withCredentials: true,
           headers: {
-            'Authorization': `Bearer ${this.getJWT()}` // এক্সেস টোকেন হেডারে
+            'Authorization': `Bearer ${this.getJWT()}`
           }
         }
       );
@@ -51,7 +50,6 @@ class AccountService {
     } catch (error: any) {
       console.error('Error refreshing token:', error);
       
-      // 401 এর ক্ষেত্রে অটো লগআউট
       if (error.response?.status === 401) {
         this.logout();
         sharedService.showNotification(false, 'Session Expired', 'Please login again');
@@ -117,22 +115,18 @@ class AccountService {
     return axios.put(`${API_URL}/reset-password`, model);
   }
 
-  logout() {
+  async logout() {
     console.log('Logging out...');
     try {
       localStorage.removeItem(USER_KEY);
       this.userSubject.next(null);
       this.stopRefreshTokenTimer();
       clearTimeout(this.timeoutId);
-  
+
       if (sharedService.isAutoLogout) {
-        // স্বয়ংক্রিয় লগআউটের ক্ষেত্রে
-        localStorage.setItem('autoLogout', 'true'); // ফ্ল্যাগ সেট করুন
-      } else {
-        localStorage.removeItem('autoLogout'); // ম্যানুয়াল লগআউটের ক্ষেত্রে ফ্ল্যাগ রিমুভ করুন
+        localStorage.setItem('autoLogout', 'true');
       }
-  
-      // হোম পেজে রিডাইরেক্ট
+
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
@@ -148,31 +142,27 @@ class AccountService {
     return null;
   }
 
-  // ... পূর্বের কোড অপরিবর্তিত ...
+  checkUserIdleTimeout() {
+    console.log('Checking user idle timeout...');
+    clearTimeout(this.timeoutId);
 
-checkUserIdleTimeout() {
-  console.log('Checking user idle timeout...');
-  clearTimeout(this.timeoutId);
-
-  this.user$.pipe(take(1)).subscribe(user => {
-    if (user) {
-      if (!sharedService.displayingExpiringSessionModal) {
-        console.log('Setting timeout for 10 seconds...');
-        this.timeoutId = setTimeout(() => {
-          console.log('Timeout reached, opening expiring session modal...');
-          sharedService.displayingExpiringSessionModal = true;
-          sharedService.openExpiringSessionCountdown(5); // 5 সেকেন্ডের কাউন্টডাউন
-        }, 10 * 1000); // 10 সেকেন্ড (10000 মিলিসেকেন্ড)
+    this.user$.pipe(take(1)).subscribe(user => {
+      if (user) {
+        if (!sharedService.displayingExpiringSessionModal) {
+          console.log('Setting timeout for 10 seconds...');
+          this.timeoutId = setTimeout(() => {
+            console.log('Timeout reached, opening expiring session modal...');
+            sharedService.displayingExpiringSessionModal = true;
+            sharedService.openExpiringSessionCountdown(5);
+          }, 10 * 1000);
+        } else {
+          console.log('Expiring session modal already displaying...');
+        }
       } else {
-        console.log('Expiring session modal already displaying...');
+        console.log('No user logged in, skipping idle timeout...');
       }
-    } else {
-      console.log('No user logged in, skipping idle timeout...');
-    }
-  });
-}
-
-// ... বাকি কোড অপরিবর্তিত ...
+    });
+  }
 
   private setUser(user: User) {
     this.stopRefreshTokenTimer();

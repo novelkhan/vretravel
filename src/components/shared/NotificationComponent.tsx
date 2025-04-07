@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import sharedService from '../../services/SharedService';
 
-// Window ইন্টারফেস এক্সটেন্ড করুন
 declare global {
   interface Window {
     bootstrap?: {
@@ -30,38 +29,54 @@ const NotificationComponent: React.FC = () => {
     isOpen: false,
     isSuccess: true,
     title: '',
-    message: '',
+    message: ''
   });
+  const modalRef = React.useRef<any>(null);
 
   useEffect(() => {
-    // নোটিফিকেশন সাবস্ক্রিপশন
+    const checkAutoLogout = () => {
+      const isAutoLogout = localStorage.getItem('autoLogout') === 'true';
+      if (isAutoLogout) {
+        sharedService.showNotification(
+          false,
+          'Logged Out',
+          'You have been logged out due to inactivity'
+        );
+        localStorage.removeItem('autoLogout');
+      }
+    };
+
     const subscription = sharedService.notification$.subscribe((newState) => {
       setNotification(newState);
-
+      
       if (newState.isOpen && window.bootstrap) {
         const modalElement = document.getElementById('notificationModal');
         if (modalElement) {
-          const modal = new window.bootstrap.Modal(modalElement, {
+          // প্রথমে কোনো existing মডাল ইনস্ট্যান্স ডিসপোজ করুন
+          const existingModal = window.bootstrap.Modal.getInstance(modalElement);
+          if (existingModal) {
+            existingModal.dispose();
+          }
+          
+          // নতুন মডাল তৈরি করুন
+          modalRef.current = new window.bootstrap.Modal(modalElement, {
             backdrop: 'static',
-            keyboard: false,
+            keyboard: false
           });
-          modal.show();
+          modalRef.current.show();
         }
       }
     });
 
-    // অটো লগআউট চেক করুন
-    const isAutoLogout = localStorage.getItem('autoLogout');
-    if (isAutoLogout === 'true' && window.bootstrap) {
-      sharedService.showNotification(
-        false,
-        'Logged Out',
-        'You have been logged out due to inactivity'
-      );
-      localStorage.removeItem('autoLogout'); // একবার শো করার পর ফ্ল্যাগ রিমুভ করুন
-    }
+    checkAutoLogout();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      // কম্পোনেন্ট আনমাউন্ট হলে মডাল ডিসপোজ করুন
+      if (modalRef.current) {
+        modalRef.current.dispose();
+      }
+    };
   }, []);
 
   const handleClose = () => {
@@ -69,33 +84,40 @@ const NotificationComponent: React.FC = () => {
       notification.callback();
     }
     sharedService.closeNotification();
+    
+    if (modalRef.current) {
+      modalRef.current.hide();
+      modalRef.current.dispose();
+      modalRef.current = null;
+    }
 
-    if (window.bootstrap) {
+    // জোরপূর্বক ক্লিনআপ (যদি কোনো কিছু থেকে যায়)
+    const cleanUpModal = () => {
       const modalElement = document.getElementById('notificationModal');
       if (modalElement) {
-        const modal = window.bootstrap.Modal.getInstance(modalElement);
-        if (modal) {
-          modal.hide(); // মডাল বন্ধ করুন
-          modal.dispose(); // মডাল ডিসপোজ করুন যাতে ব্যাকড্রপ রিমুভ হয়
-        }
-
-        // ম্যানুয়ালি ব্যাকড্রপ রিমুভ করুন (অতিরিক্ত নিরাপত্তার জন্য)
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) {
-          backdrop.remove();
-        }
-
-        // বডি থেকে মডাল-রিলেটেড ক্লাস রিমুভ করুন
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = ''; // স্ক্রলিং রিস্টোর করুন
+        modalElement.style.display = 'none';
+        modalElement.removeAttribute('aria-modal');
+        modalElement.removeAttribute('role');
+        modalElement.setAttribute('aria-hidden', 'true');
       }
-    }
+
+      const backdrops = document.getElementsByClassName('modal-backdrop');
+      for (let i = 0; i < backdrops.length; i++) {
+        backdrops[i].remove();
+      }
+
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+
+    cleanUpModal();
   };
 
   return (
-    <div
-      className="modal fade"
-      id="notificationModal"
+    <div 
+      className="modal fade" 
+      id="notificationModal" 
       tabIndex={-1}
       role="dialog"
       aria-labelledby="notificationModalLabel"
@@ -107,16 +129,22 @@ const NotificationComponent: React.FC = () => {
             <h5 className="modal-title" id="notificationModalLabel">
               {notification.title}
             </h5>
-            <button
-              type="button"
-              className="btn-close"
+            <button 
+              type="button" 
+              className="btn-close" 
               onClick={handleClose}
               aria-label="Close"
             ></button>
           </div>
-          <div className="modal-body">{notification.message}</div>
+          <div className="modal-body">
+            {notification.message}
+          </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={handleClose}>
+            <button 
+              type="button" 
+              className="btn btn-secondary" 
+              onClick={handleClose}
+            >
               OK
             </button>
           </div>
