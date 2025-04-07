@@ -124,6 +124,15 @@ class AccountService {
       this.userSubject.next(null);
       this.stopRefreshTokenTimer();
       clearTimeout(this.timeoutId);
+  
+      if (sharedService.isAutoLogout) {
+        // স্বয়ংক্রিয় লগআউটের ক্ষেত্রে
+        localStorage.setItem('autoLogout', 'true'); // ফ্ল্যাগ সেট করুন
+      } else {
+        localStorage.removeItem('autoLogout'); // ম্যানুয়াল লগআউটের ক্ষেত্রে ফ্ল্যাগ রিমুভ করুন
+      }
+  
+      // হোম পেজে রিডাইরেক্ট
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
@@ -153,7 +162,7 @@ checkUserIdleTimeout() {
           console.log('Timeout reached, opening expiring session modal...');
           sharedService.displayingExpiringSessionModal = true;
           sharedService.openExpiringSessionCountdown(5); // 5 সেকেন্ডের কাউন্টডাউন
-        }, 10 * 60 * 1000); // 10 সেকেন্ড (10000 মিলিসেকেন্ড)
+        }, 10 * 1000); // 10 সেকেন্ড (10000 মিলিসেকেন্ড)
       } else {
         console.log('Expiring session modal already displaying...');
       }

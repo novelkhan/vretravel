@@ -30,24 +30,36 @@ const NotificationComponent: React.FC = () => {
     isOpen: false,
     isSuccess: true,
     title: '',
-    message: ''
+    message: '',
   });
 
   useEffect(() => {
+    // নোটিফিকেশন সাবস্ক্রিপশন
     const subscription = sharedService.notification$.subscribe((newState) => {
       setNotification(newState);
-      
+
       if (newState.isOpen && window.bootstrap) {
         const modalElement = document.getElementById('notificationModal');
         if (modalElement) {
           const modal = new window.bootstrap.Modal(modalElement, {
             backdrop: 'static',
-            keyboard: false
+            keyboard: false,
           });
           modal.show();
         }
       }
     });
+
+    // অটো লগআউট চেক করুন
+    const isAutoLogout = localStorage.getItem('autoLogout');
+    if (isAutoLogout === 'true' && window.bootstrap) {
+      sharedService.showNotification(
+        false,
+        'Logged Out',
+        'You have been logged out due to inactivity'
+      );
+      localStorage.removeItem('autoLogout'); // একবার শো করার পর ফ্ল্যাগ রিমুভ করুন
+    }
 
     return () => subscription.unsubscribe();
   }, []);
@@ -57,7 +69,7 @@ const NotificationComponent: React.FC = () => {
       notification.callback();
     }
     sharedService.closeNotification();
-    
+
     if (window.bootstrap) {
       const modalElement = document.getElementById('notificationModal');
       if (modalElement) {
@@ -68,9 +80,9 @@ const NotificationComponent: React.FC = () => {
   };
 
   return (
-    <div 
-      className="modal fade" 
-      id="notificationModal" 
+    <div
+      className="modal fade"
+      id="notificationModal"
       tabIndex={-1}
       role="dialog"
       aria-labelledby="notificationModalLabel"
@@ -82,22 +94,16 @@ const NotificationComponent: React.FC = () => {
             <h5 className="modal-title" id="notificationModalLabel">
               {notification.title}
             </h5>
-            <button 
-              type="button" 
-              className="btn-close" 
+            <button
+              type="button"
+              className="btn-close"
               onClick={handleClose}
               aria-label="Close"
             ></button>
           </div>
-          <div className="modal-body">
-            {notification.message}
-          </div>
+          <div className="modal-body">{notification.message}</div>
           <div className="modal-footer">
-            <button 
-              type="button" 
-              className="btn btn-secondary" 
-              onClick={handleClose}
-            >
+            <button type="button" className="btn btn-secondary" onClick={handleClose}>
               OK
             </button>
           </div>

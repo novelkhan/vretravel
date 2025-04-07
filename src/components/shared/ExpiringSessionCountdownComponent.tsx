@@ -63,7 +63,7 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
 
   const handleTimeout = () => {
     sharedService.displayingExpiringSessionModal = false;
-    sharedService.showNotification(false, 'Logged Out', 'You have been logged out due to inactivity');
+    sharedService.isAutoLogout = true; // ফ্ল্যাগ সেট করুন
     logout();
   };
 
