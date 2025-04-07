@@ -74,7 +74,20 @@ const NotificationComponent: React.FC = () => {
       const modalElement = document.getElementById('notificationModal');
       if (modalElement) {
         const modal = window.bootstrap.Modal.getInstance(modalElement);
-        modal?.hide();
+        if (modal) {
+          modal.hide(); // মডাল বন্ধ করুন
+          modal.dispose(); // মডাল ডিসপোজ করুন যাতে ব্যাকড্রপ রিমুভ হয়
+        }
+
+        // ম্যানুয়ালি ব্যাকড্রপ রিমুভ করুন (অতিরিক্ত নিরাপত্তার জন্য)
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          backdrop.remove();
+        }
+
+        // বডি থেকে মডাল-রিলেটেড ক্লাস রিমুভ করুন
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = ''; // স্ক্রলিং রিস্টোর করুন
       }
     }
   };
