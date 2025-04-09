@@ -118,15 +118,38 @@ class AccountService {
   async logout() {
     console.log('Logging out...');
     try {
+      // প্রথমে সব মডাল বন্ধ করুন
+      const notificationModal = document.getElementById('notificationModal');
+      const sessionModal = document.getElementById('sessionModal');
+      
+      if (notificationModal && window.bootstrap) {
+        const modal = window.bootstrap.Modal.getInstance(notificationModal);
+        if (modal) modal.hide();
+      }
+      
+      if (sessionModal && window.bootstrap) {
+        const modal = window.bootstrap.Modal.getInstance(sessionModal);
+        if (modal) modal.hide();
+      }
+      
+      // DOM ক্লিনআপ করুন
+      const backdrops = document.getElementsByClassName('modal-backdrop');
+      for (let i = 0; i < backdrops.length; i++) {
+        backdrops[i].remove();
+      }
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+  
       localStorage.removeItem(USER_KEY);
       this.userSubject.next(null);
       this.stopRefreshTokenTimer();
       clearTimeout(this.timeoutId);
-
+  
       if (sharedService.isAutoLogout) {
         localStorage.setItem('autoLogout', 'true');
       }
-
+  
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);

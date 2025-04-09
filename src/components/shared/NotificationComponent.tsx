@@ -31,7 +31,6 @@ const NotificationComponent: React.FC = () => {
     title: '',
     message: ''
   });
-  const modalRef = React.useRef<any>(null);
 
   useEffect(() => {
     const checkAutoLogout = () => {
@@ -52,18 +51,16 @@ const NotificationComponent: React.FC = () => {
       if (newState.isOpen && window.bootstrap) {
         const modalElement = document.getElementById('notificationModal');
         if (modalElement) {
-          // প্রথমে কোনো existing মডাল ইনস্ট্যান্স ডিসপোজ করুন
           const existingModal = window.bootstrap.Modal.getInstance(modalElement);
           if (existingModal) {
-            existingModal.dispose();
+            existingModal.hide();
           }
           
-          // নতুন মডাল তৈরি করুন
-          modalRef.current = new window.bootstrap.Modal(modalElement, {
+          const modal = new window.bootstrap.Modal(modalElement, {
             backdrop: 'static',
             keyboard: false
           });
-          modalRef.current.show();
+          modal.show();
         }
       }
     });
@@ -72,10 +69,6 @@ const NotificationComponent: React.FC = () => {
 
     return () => {
       subscription.unsubscribe();
-      // কম্পোনেন্ট আনমাউন্ট হলে মডাল ডিসপোজ করুন
-      if (modalRef.current) {
-        modalRef.current.dispose();
-      }
     };
   }, []);
 
@@ -85,39 +78,27 @@ const NotificationComponent: React.FC = () => {
     }
     sharedService.closeNotification();
     
-    if (modalRef.current) {
-      modalRef.current.hide();
-      modalRef.current.dispose();
-      modalRef.current = null;
+    const modalElement = document.getElementById('notificationModal');
+    if (modalElement && window.bootstrap) {
+      const modal = window.bootstrap.Modal.getInstance(modalElement);
+      if (modal) {
+        modal.hide();
+        // ম্যানুয়ালি ব্যাকড্রপ ক্লিনআপ
+        const backdrops = document.getElementsByClassName('modal-backdrop');
+        for (let i = 0; i < backdrops.length; i++) {
+          backdrops[i].remove();
+        }
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+      }
     }
-
-    // জোরপূর্বক ক্লিনআপ (যদি কোনো কিছু থেকে যায়)
-    const cleanUpModal = () => {
-      const modalElement = document.getElementById('notificationModal');
-      if (modalElement) {
-        modalElement.style.display = 'none';
-        modalElement.removeAttribute('aria-modal');
-        modalElement.removeAttribute('role');
-        modalElement.setAttribute('aria-hidden', 'true');
-      }
-
-      const backdrops = document.getElementsByClassName('modal-backdrop');
-      for (let i = 0; i < backdrops.length; i++) {
-        backdrops[i].remove();
-      }
-
-      document.body.classList.remove('modal-open');
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
-    };
-
-    cleanUpModal();
   };
 
   return (
     <div 
       className="modal fade" 
-      id="notificationModal" 
+      id="notificationModal"
       tabIndex={-1}
       role="dialog"
       aria-labelledby="notificationModalLabel"

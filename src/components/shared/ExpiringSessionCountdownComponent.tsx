@@ -5,7 +5,6 @@ import accountService from '../../services/AccountService';
 const ExpiringSessionCountdownComponent: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<number>(5);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -33,26 +32,23 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!modalRef.current) return;
-
-    const modalElement = modalRef.current;
-    const modal = new (window as any).bootstrap.Modal(modalElement, {
-      backdrop: 'static',
-      keyboard: false
-    });
-
+    const modalElement = document.getElementById('sessionModal');
+    
     const subscription = sharedService.modalOpened$.subscribe((time: number) => {
       startTimer(time);
-      modal.show();
+      if (modalElement && window.bootstrap) {
+        const modal = new window.bootstrap.Modal(modalElement, {
+          backdrop: 'static',
+          keyboard: false
+        });
+        modal.show();
+      }
     });
 
     return () => {
       subscription.unsubscribe();
       if (timerRef.current) {
         clearInterval(timerRef.current);
-      }
-      if (modal && typeof modal.dispose === 'function') {
-        modal.dispose();
       }
     };
   }, []);
@@ -64,9 +60,12 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
   };
 
   const logout = () => {
-    if (modalRef.current) {
-      const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
-      modal?.hide();
+    const modalElement = document.getElementById('sessionModal');
+    if (modalElement && window.bootstrap) {
+      const modal = window.bootstrap.Modal.getInstance(modalElement);
+      if (modal) {
+        modal.hide();
+      }
     }
     accountService.logout();
   };
@@ -76,17 +75,22 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    if (modalRef.current) {
-      const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
-      modal?.hide();
+    
+    const modalElement = document.getElementById('sessionModal');
+    if (modalElement && window.bootstrap) {
+      const modal = window.bootstrap.Modal.getInstance(modalElement);
+      if (modal) {
+        modal.hide();
+      }
     }
+    
     await accountService.refreshToken();
   };
 
   return (
     <div 
       className="modal fade" 
-      ref={modalRef}
+      id="sessionModal"
       tabIndex={-1}
       role="dialog"
       aria-labelledby="sessionModalLabel"
