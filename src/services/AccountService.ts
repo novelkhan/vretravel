@@ -114,25 +114,64 @@ class AccountService {
     return axios.put(`${API_URL}/reset-password`, model);
   }
 
-  logout() {
+  async logout() {
     console.log('Logging out...');
     try {
+      // মডাল এবং ব্যাকড্রপ ক্লিনআপ
+      const notificationModal = document.getElementById('notificationModal');
+      const sessionModal = document.getElementById('sessionModal');
+  
+      // মডাল বন্ধ করার জন্য একটি প্রমিস-ভিত্তিক ফাংশন
+      const hideModal = (modalElement: HTMLElement | null) => {
+        return new Promise<void>((resolve) => {
+          if (modalElement && window.bootstrap) {
+            const modal = window.bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+              // মডাল বন্ধ হওয়ার ইভেন্টের জন্য শোনা
+              modalElement.addEventListener(
+                'hidden.bs.modal',
+                () => {
+                  modal.dispose(); // মডাল ধ্বংস করা
+                  resolve();
+                },
+                { once: true }
+              );
+              modal.hide();
+            } else {
+              resolve();
+            }
+          } else {
+            resolve();
+          }
+        });
+      };
+  
+      // উভয় মডাল বন্ধ করা
+      await Promise.all([hideModal(notificationModal), hideModal(sessionModal)]);
+  
+      // ব্যাকড্রপ এবং বডি ক্লিনআপ
+      const backdrops = document.getElementsByClassName('modal-backdrop');
+      while (backdrops.length > 0) {
+        backdrops[0].remove();
+      }
+  
+      const body = document.body;
+      body.classList.remove('modal-open');
+      body.style.overflow = '';
+      body.style.paddingRight = '';
+      body.style.marginRight = '';
+  
+      // স্টোরেজ এবং স্টেট ক্লিনআপ
       localStorage.removeItem(USER_KEY);
       this.userSubject.next(null);
       this.stopRefreshTokenTimer();
       clearTimeout(this.timeoutId);
-
+  
       if (sharedService.isAutoLogout) {
         localStorage.setItem('autoLogout', 'true');
-        sharedService.showNotification(
-          false,
-          'Logged Out',
-          'You have been logged out due to inactivity'
-        );
-      } else {
-        localStorage.removeItem('autoLogout');
       }
-
+  
+      // হোম পেজে রিডাইরেক্ট
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);

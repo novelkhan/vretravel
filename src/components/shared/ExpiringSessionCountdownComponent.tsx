@@ -1,4 +1,3 @@
-// ExpiringSessionCountdownComponent.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import sharedService from '../../services/SharedService';
 import accountService from '../../services/AccountService';
@@ -6,7 +5,6 @@ import accountService from '../../services/AccountService';
 const ExpiringSessionCountdownComponent: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<number>(5);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -34,41 +32,23 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!modalRef.current) return;
-
-    const modalElement = modalRef.current;
-    const modal = new (window as any).bootstrap.Modal(modalElement, {
-      backdrop: 'static',
-      keyboard: false
-    });
-
+    const modalElement = document.getElementById('sessionModal');
+    
     const subscription = sharedService.modalOpened$.subscribe((time: number) => {
       startTimer(time);
-      modal.show();
+      if (modalElement && window.bootstrap) {
+        const modal = new window.bootstrap.Modal(modalElement, {
+          backdrop: 'static',
+          keyboard: false
+        });
+        modal.show();
+      }
     });
 
     return () => {
       subscription.unsubscribe();
       if (timerRef.current) {
         clearInterval(timerRef.current);
-      }
-      if (modal && typeof modal.dispose === 'function') {
-        modal.hide();
-        // ফোকাস রিমুভ করা
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-        setTimeout(() => {
-          modal.dispose();
-          const backdrops = document.querySelectorAll('.modal-backdrop');
-          backdrops.forEach(backdrop => backdrop.remove());
-          document.body.classList.remove('modal-open');
-          document.body.style.overflow = 'auto';
-          document.body.style.paddingRight = '0px';
-          if (modalRef.current) {
-            modalRef.current.removeAttribute('aria-hidden');
-          }
-        }, 500);
       }
     };
   }, []);
@@ -80,96 +60,78 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
   };
 
   const logout = () => {
-    if (modalRef.current) {
-      const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
+    const modalElement = document.getElementById('sessionModal');
+    if (modalElement && window.bootstrap) {
+      const modal = window.bootstrap.Modal.getInstance(modalElement);
       if (modal) {
-        // ফোকাস রিমুভ করা
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
+        modalElement.addEventListener(
+          'hidden.bs.modal',
+          () => {
+            modal.dispose();
+            // ব্যাকড্রপ এবং বডি ক্লিনআপ
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            while (backdrops.length > 0) {
+              backdrops[0].remove();
+            }
+            const body = document.body;
+            body.classList.remove('modal-open');
+            body.style.overflow = '';
+            body.style.paddingRight = '';
+            body.style.marginRight = '';
+            accountService.logout();
+          },
+          { once: true }
+        );
         modal.hide();
-        setTimeout(() => {
-          modal.dispose();
-          const backdrops = document.querySelectorAll('.modal-backdrop');
-          backdrops.forEach(backdrop => backdrop.remove());
-          document.body.classList.remove('modal-open');
-          document.body.style.overflow = 'auto';
-          document.body.style.paddingRight = '0px';
-          if (modalRef.current) {
-            modalRef.current.removeAttribute('aria-hidden');
-          }
-        }, 500);
       } else {
-        // যদি modal ইন্সট্যান্স না থাকে, ম্যানুয়ালি বন্ধ করা
-        modalRef.current.classList.remove('show');
-        modalRef.current.style.display = 'none';
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => backdrop.remove());
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = 'auto';
-        document.body.style.paddingRight = '0px';
-        if (modalRef.current) {
-          modalRef.current.removeAttribute('aria-hidden');
-        }
+        accountService.logout();
       }
+    } else {
+      accountService.logout();
     }
-    accountService.logout();
   };
-
+  
   const resumeSession = async () => {
     sharedService.displayingExpiringSessionModal = false;
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    if (modalRef.current) {
-      const modal = (window as any).bootstrap.Modal.getInstance(modalRef.current);
+  
+    const modalElement = document.getElementById('sessionModal');
+    if (modalElement && window.bootstrap) {
+      const modal = window.bootstrap.Modal.getInstance(modalElement);
       if (modal) {
-        // ফোকাস রিমুভ করা
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
+        modalElement.addEventListener(
+          'hidden.bs.modal',
+          () => {
+            modal.dispose();
+            // ব্যাকড্রপ এবং বডি ক্লিনআপ
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            while (backdrops.length > 0) {
+              backdrops[0].remove();
+            }
+            const body = document.body;
+            body.classList.remove('modal-open');
+            body.style.overflow = '';
+            body.style.paddingRight = '';
+            body.style.marginRight = '';
+          },
+          { once: true }
+        );
         modal.hide();
-        setTimeout(() => {
-          modal.dispose();
-          const backdrops = document.querySelectorAll('.modal-backdrop');
-          backdrops.forEach(backdrop => backdrop.remove());
-          document.body.classList.remove('modal-open');
-          document.body.style.overflow = 'auto';
-          document.body.style.paddingRight = '0px';
-          if (modalRef.current) {
-            modalRef.current.removeAttribute('aria-hidden');
-          }
-        }, 500);
-      } else {
-        // যদি modal ইন্সট্যান্স না থাকে, ম্যানুয়ালি বন্ধ করা
-        modalRef.current.classList.remove('show');
-        modalRef.current.style.display = 'none';
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => backdrop.remove());
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = 'auto';
-        document.body.style.paddingRight = '0px';
-        if (modalRef.current) {
-          modalRef.current.removeAttribute('aria-hidden');
-        }
       }
     }
-    try {
-      await accountService.refreshToken();
-    } catch (error) {
-      console.error('Failed to refresh token in resumeSession:', error);
-      sharedService.showNotification(false, 'Error', 'Something went wrong. Please try again.');
-    }
+  
+    await accountService.refreshToken();
   };
 
   return (
     <div 
       className="modal fade" 
-      ref={modalRef}
+      id="sessionModal"
       tabIndex={-1}
       role="dialog"
       aria-labelledby="sessionModalLabel"
-      aria-hidden="true"
     >
       <div className="modal-dialog">
         <div className="modal-content">
