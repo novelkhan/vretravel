@@ -64,26 +64,64 @@ const ExpiringSessionCountdownComponent: React.FC = () => {
     if (modalElement && window.bootstrap) {
       const modal = window.bootstrap.Modal.getInstance(modalElement);
       if (modal) {
+        modalElement.addEventListener(
+          'hidden.bs.modal',
+          () => {
+            modal.dispose();
+            // ব্যাকড্রপ এবং বডি ক্লিনআপ
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            while (backdrops.length > 0) {
+              backdrops[0].remove();
+            }
+            const body = document.body;
+            body.classList.remove('modal-open');
+            body.style.overflow = '';
+            body.style.paddingRight = '';
+            body.style.marginRight = '';
+            accountService.logout();
+          },
+          { once: true }
+        );
         modal.hide();
+      } else {
+        accountService.logout();
       }
+    } else {
+      accountService.logout();
     }
-    accountService.logout();
   };
-
+  
   const resumeSession = async () => {
     sharedService.displayingExpiringSessionModal = false;
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    
+  
     const modalElement = document.getElementById('sessionModal');
     if (modalElement && window.bootstrap) {
       const modal = window.bootstrap.Modal.getInstance(modalElement);
       if (modal) {
+        modalElement.addEventListener(
+          'hidden.bs.modal',
+          () => {
+            modal.dispose();
+            // ব্যাকড্রপ এবং বডি ক্লিনআপ
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            while (backdrops.length > 0) {
+              backdrops[0].remove();
+            }
+            const body = document.body;
+            body.classList.remove('modal-open');
+            body.style.overflow = '';
+            body.style.paddingRight = '';
+            body.style.marginRight = '';
+          },
+          { once: true }
+        );
         modal.hide();
       }
     }
-    
+  
     await accountService.refreshToken();
   };
 

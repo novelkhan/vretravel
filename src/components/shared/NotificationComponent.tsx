@@ -77,20 +77,30 @@ const NotificationComponent: React.FC = () => {
       notification.callback();
     }
     sharedService.closeNotification();
-    
+  
     const modalElement = document.getElementById('notificationModal');
     if (modalElement && window.bootstrap) {
       const modal = window.bootstrap.Modal.getInstance(modalElement);
       if (modal) {
+        // মডাল বন্ধ হওয়ার জন্য ইভেন্টের অপেক্ষা
+        modalElement.addEventListener(
+          'hidden.bs.modal',
+          () => {
+            modal.dispose(); // মডাল ধ্বংস করা
+            // ব্যাকড্রপ এবং বডি ক্লিনআপ
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            while (backdrops.length > 0) {
+              backdrops[0].remove();
+            }
+            const body = document.body;
+            body.classList.remove('modal-open');
+            body.style.overflow = '';
+            body.style.paddingRight = '';
+            body.style.marginRight = '';
+          },
+          { once: true }
+        );
         modal.hide();
-        // ম্যানুয়ালি ব্যাকড্রপ ক্লিনআপ
-        const backdrops = document.getElementsByClassName('modal-backdrop');
-        for (let i = 0; i < backdrops.length; i++) {
-          backdrops[i].remove();
-        }
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
       }
     }
   };
