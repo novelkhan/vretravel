@@ -198,8 +198,10 @@ class AccountService {
           this.timeoutId = setTimeout(() => {
             console.log('Timeout reached, opening expiring session modal...');
             sharedService.displayingExpiringSessionModal = true;
-            sharedService.openExpiringSessionCountdown(5);
-          }, 10 * 1000); // টেস্টিংয়ের জন্য 10 সেকেন্ড
+            //sharedService.openExpiringSessionCountdown(5);
+            sharedService.openExpiringSessionCountdown(environment.countdownDurationInSeconds);
+          //}, 10 * 1000); // টেস্টিংয়ের জন্য 10 সেকেন্ড
+          }, environment.idleTimeoutInMilliSeconds); // টেস্টিংয়ের জন্য 10 সেকেন্ড
         } else {
           console.log('Expiring session modal already displaying...');
         }
