@@ -8,6 +8,7 @@ import accountService from '../../services/AccountService';
 import sharedService from '../../services/SharedService';
 import { Register } from '../../models/account';
 import './Register.css';
+import ValidationMessages from '../shared/ValidationMessages';
 
 const schema = yup.object({
   firstName: yup
@@ -47,6 +48,13 @@ const RegisterPage: React.FC = () => {
     }
   }, [user, navigate]);
 
+  // ✅ Logging error messages when they change
+  useEffect(() => {
+    if (errorMessages.length > 0) {
+      console.log(errorMessages);
+    }
+  }, [errorMessages]);
+
   const onSubmit = async (data: Register) => {
     setSubmitted(true);
     setErrorMessages([]);
@@ -71,6 +79,7 @@ const RegisterPage: React.FC = () => {
                 Let's Get Started to <span className="text-danger">Play</span>
               </h3>
             </div>
+
             <div className="form-floating mb-3">
               <input
                 {...register('firstName')}
@@ -83,6 +92,7 @@ const RegisterPage: React.FC = () => {
                 <span className="text-danger">{errors.firstName.message}</span>
               )}
             </div>
+
             <div className="form-floating mb-3">
               <input
                 {...register('lastName')}
@@ -95,6 +105,7 @@ const RegisterPage: React.FC = () => {
                 <span className="text-danger">{errors.lastName.message}</span>
               )}
             </div>
+
             <div className="form-floating mb-3">
               <input
                 {...register('email')}
@@ -107,6 +118,7 @@ const RegisterPage: React.FC = () => {
                 <span className="text-danger">{errors.email.message}</span>
               )}
             </div>
+
             <div className="form-floating mb-3">
               <input
                 {...register('password')}
@@ -119,15 +131,13 @@ const RegisterPage: React.FC = () => {
                 <span className="text-danger">{errors.password.message}</span>
               )}
             </div>
+
             {errorMessages.length > 0 && (
-              <div className="form-floating">
-                <div className="text-danger">
-                  {errorMessages.map((msg, idx) => (
-                    <div key={idx}>{msg}</div>
-                  ))}
-                </div>
+              <div className="mb-3">
+                <ValidationMessages errorMessages={errorMessages} />
               </div>
             )}
+
             <div className="d-grid mt-4 px-1">
               <button className="btn btn-lg btn-info" type="submit">
                 Create Account
