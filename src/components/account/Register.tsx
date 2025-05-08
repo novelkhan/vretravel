@@ -18,12 +18,12 @@ const schema = yup.object({
   lastName: yup
     .string()
     .required('Last name is required')
-    .min(3, 'Last name must be at least 3, and maximum 15 characters')
+    .min(1, 'Last name must be at least 3, and maximum 15 characters')
     .max(15, 'Last name must be at least 3, and maximum 15 characters'),
   email: yup
     .string()
     .required('Email is required')
-    .matches(/^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/, 'Invalid email address'),
+    .email('Invalid email address'),
   password: yup
     .string()
     .required('Password is required')
@@ -37,8 +37,9 @@ const RegisterPage: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<Register>({
+  const { register, handleSubmit, formState: { errors, isSubmitted } } = useForm<Register>({
     resolver: yupResolver(schema),
+    mode: 'onChange',
   });
 
   useEffect(() => {
@@ -48,10 +49,8 @@ const RegisterPage: React.FC = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (errorMessages.length > 0) {
-      console.log(errorMessages);
-    }
-  }, [errorMessages]);
+    console.log('Form errors:', errors);
+  }, [errors]);
 
   const onSubmit = async (data: Register) => {
     setSubmitted(true);
@@ -62,21 +61,33 @@ const RegisterPage: React.FC = () => {
       sharedService.showNotification(true, response.value.title, response.value.message);
       navigate('/account/login');
     } catch (error: any) {
-      if (error.error?.errors) {
-        setErrorMessages(error.error.errors);
+      console.log('Server error response:', error); // ডিবাগিংয়ের জন্য
+      let errors: string[] = [];
+
+      // ASP.NET Core এরর ফরম্যাট হ্যান্ডল করা
+      if (error.response?.data?.Errors) {
+        errors = error.response.data.Errors; // { Errors: string[] }
+      } else if (error.response?.data?.errors) {
+        errors = error.response.data.errors; // { errors: string[] }
+      } else if (typeof error.response?.data === 'string') {
+        errors = [error.response.data]; // স্ট্রিং হিসেবে এরর
+      } else if (error.message) {
+        errors = [error.message]; // ফলব্যাক মেসেজ
       } else {
-        setErrorMessages([error.error || 'Registration failed']);
+        errors = ['Registration failed'];
       }
+
+      setErrorMessages(errors);
     }
   };
 
   return (
     <div className="d-flex justify-content-center">
       <div className="col-12 col-lg-5">
-        <main className="w-100 p-3">
+        <main className="form-signin w-100 p-3">
           <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
             <div className="text-center mb-4">
-              <h3 className="mb-3 fw-normal">
+              <h3 className="mb-3 font-weight-normal">
                 Let's Get Started to <span className="text-danger">Play</span>
               </h3>
             </div>
@@ -84,56 +95,72 @@ const RegisterPage: React.FC = () => {
               <input
                 {...register('firstName')}
                 type="text"
-                className={`form-control ${submitted && errors.firstName ? 'is-invalid' : ''}`}
+                className={`form-control ${errors.firstName && (submitted || isSubmitted) ? 'is-invalid' : ''}`}
                 placeholder="First name"
                 id="firstName"
+                autoComplete="given-name"
               />
               <label htmlFor="firstName">First name</label>
-              {submitted && errors.firstName && (
-                <span className="text-danger">{errors.firstName.message}</span>
+              {(submitted || isSubmitted) && errors.firstName?.type === 'required' && (
+                <span className="text-danger">First name is required</span>
+              )}
+              {(submitted || isSubmitted) && (errors.firstName?.type === 'min' || errors.firstName?.type === 'max') && (
+                <span className="text-danger">First name must be at least 3, and maximum 15 characters</span>
               )}
             </div>
             <div className="form-floating mb-3">
               <input
                 {...register('lastName')}
                 type="text"
-                className={`form-control ${submitted && errors.lastName ? 'is-invalid' : ''}`}
+                className={`form-control ${errors.lastName && (submitted || isSubmitted) ? 'is-invalid' : ''}`}
                 placeholder="Last name"
                 id="lastName"
+                autoComplete="family-name"
               />
               <label htmlFor="lastName">Last name</label>
-              {submitted && errors.lastName && (
-                <span className="text-danger">{errors.lastName.message}</span>
+              {(submitted || isSubmitted) && errors.lastName?.type === 'required' && (
+                <span className="text-danger">Last name is required</span>
+              )}
+              {(submitted || isSubmitted) && (errors.lastName?.type === 'min' || errors.lastName?.type === 'max') && (
+                <span className="text-danger">Last name must be at least 3, and maximum 15 characters</span>
               )}
             </div>
             <div className="form-floating mb-3">
               <input
                 {...register('email')}
-                type="text"
-                className={`form-control ${submitted && errors.email ? 'is-invalid' : ''}`}
+                type="email"
+                className={`form-control ${errors.email && (submitted || isSubmitted) ? 'is-invalid' : ''}`}
                 placeholder="Email"
                 id="email"
+                autoComplete="email"
               />
               <label htmlFor="email">Email</label>
-              {submitted && errors.email && (
-                <span className="text-danger">{errors.email.message}</span>
+              {(submitted || isSubmitted) && errors.email?.type === 'required' && (
+                <span className="text-danger">Email is required</span>
+              )}
+              {(submitted || isSubmitted) && errors.email?.type === 'email' && (
+                <span className="text-danger">Invalid email address</span>
               )}
             </div>
             <div className="form-floating mb-3">
               <input
                 {...register('password')}
                 type="password"
-                className={`form-control ${submitted && errors.password ? 'is-invalid' : ''}`}
+                className={`form-control ${errors.password && (submitted || isSubmitted) ? 'is-invalid' : ''}`}
                 placeholder="Password"
                 id="password"
+                autoComplete="new-password"
               />
               <label htmlFor="password">Password</label>
-              {submitted && errors.password && (
-                <span className="text-danger">{errors.password.message}</span>
+              {(submitted || isSubmitted) && errors.password?.type === 'required' && (
+                <span className="text-danger">Password is required</span>
+              )}
+              {(submitted || isSubmitted) && (errors.password?.type === 'min' || errors.password?.type === 'max') && (
+                <span className="text-danger">Password must be at least 6, and maximum 15 characters</span>
               )}
             </div>
             {errorMessages.length > 0 && (
-              <div className="mb-3">
+              <div className="form-floating mb-3">
                 <ValidationMessages errorMessages={errorMessages} />
               </div>
             )}
