@@ -18,7 +18,7 @@ const schema = yup.object({
   lastName: yup
     .string()
     .required('Last name is required')
-    .min(1, 'Last name must be at least 3, and maximum 15 characters')
+    .min(3, 'Last name must be at least 3, and maximum 15 characters')
     .max(15, 'Last name must be at least 3, and maximum 15 characters'),
   email: yup
     .string()
@@ -58,8 +58,13 @@ const RegisterPage: React.FC = () => {
 
     try {
       const response = await accountService.register(data);
-      sharedService.showNotification(true, response.value.title, response.value.message);
-      navigate('/account/login');
+      // সফল রেসপন্সে value প্রপার্টি চেক করা
+      if (response?.value?.title && response?.value?.message) {
+        sharedService.showNotification(true, response.value.title, response.value.message);
+        navigate('/account/login');
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error: any) {
       console.log('Server error response:', error); // ডিবাগিংয়ের জন্য
       let errors: string[] = [];
