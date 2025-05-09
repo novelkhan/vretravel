@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAccount } from '../../context/AccountContext';
 
 const ConfirmEmail = () => {
   const [success, setSuccess] = useState(true);
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user } = useAccount();
   const navigate = useNavigate();
 
   useEffect(() => {

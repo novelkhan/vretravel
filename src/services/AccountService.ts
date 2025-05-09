@@ -1,4 +1,3 @@
-// src/services/AccountService.ts
 import axios from 'axios';
 import { environment } from '../environments';
 import { jwtDecode } from 'jwt-decode';
@@ -52,7 +51,7 @@ class AccountService {
       console.error('Error refreshing token:', error);
       if (error.response?.status === 401) {
         this.logout();
-        sharedService.showNotification(false, 'Session Expired', 'Please login again');
+        sharedService.showNotification(false, 'Session Expired', 'Please login again'); // সরানো
       }
       return false;
     }
@@ -90,7 +89,7 @@ class AccountService {
       }
     } catch (error: any) {
       console.error('Login failed:', error);
-      sharedService.showNotification(false, 'Login Failed', error.response?.data || 'Invalid credentials');
+      throw error; // এরর থ্রো করে LoginPage-এ হ্যান্ডল করা হবে
     }
   }
 
@@ -117,21 +116,18 @@ class AccountService {
   async logout() {
     console.log('Logging out...');
     try {
-      // মডাল এবং ব্যাকড্রপ ক্লিনআপ
       const notificationModal = document.getElementById('notificationModal');
       const sessionModal = document.getElementById('sessionModal');
   
-      // মডাল বন্ধ করার জন্য একটি প্রমিস-ভিত্তিক ফাংশন
       const hideModal = (modalElement: HTMLElement | null) => {
         return new Promise<void>((resolve) => {
           if (modalElement && window.bootstrap) {
             const modal = window.bootstrap.Modal.getInstance(modalElement);
             if (modal) {
-              // মডাল বন্ধ হওয়ার ইভেন্টের জন্য শোনা
               modalElement.addEventListener(
                 'hidden.bs.modal',
                 () => {
-                  modal.dispose(); // মডাল ধ্বংস করা
+                  modal.dispose();
                   resolve();
                 },
                 { once: true }
@@ -146,10 +142,8 @@ class AccountService {
         });
       };
   
-      // উভয় মডাল বন্ধ করা
       await Promise.all([hideModal(notificationModal), hideModal(sessionModal)]);
   
-      // ব্যাকড্রপ এবং বডি ক্লিনআপ
       const backdrops = document.getElementsByClassName('modal-backdrop');
       while (backdrops.length > 0) {
         backdrops[0].remove();
@@ -161,7 +155,6 @@ class AccountService {
       body.style.paddingRight = '';
       body.style.marginRight = '';
   
-      // স্টোরেজ এবং স্টেট ক্লিনআপ
       localStorage.removeItem(USER_KEY);
       this.userSubject.next(null);
       this.stopRefreshTokenTimer();
@@ -171,7 +164,6 @@ class AccountService {
         localStorage.setItem('autoLogout', 'true');
       }
   
-      // হোম পেজে রিডাইরেক্ট
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
@@ -198,10 +190,8 @@ class AccountService {
           this.timeoutId = setTimeout(() => {
             console.log('Timeout reached, opening expiring session modal...');
             sharedService.displayingExpiringSessionModal = true;
-            //sharedService.openExpiringSessionCountdown(5);
             sharedService.openExpiringSessionCountdown(environment.countdownDurationInSeconds);
-          //}, 10 * 1000); // টেস্টিংয়ের জন্য 10 সেকেন্ড
-          }, environment.idleTimeoutInMilliSeconds); // টেস্টিংয়ের জন্য 10 সেকেন্ড
+          }, environment.idleTimeoutInMilliSeconds);
         } else {
           console.log('Expiring session modal already displaying...');
         }
@@ -236,7 +226,6 @@ class AccountService {
   }
 }
 
-// AccountService ইন্টারফেস ডিফাইন করা
 export interface AccountServiceInterface {
   getCurrentUser: () => User | null;
   refreshToken: () => Promise<boolean>;

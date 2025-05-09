@@ -42,7 +42,7 @@ const LoginPage: React.FC = () => {
 
     try {
       await accountService.login(data);
-      navigate(returnUrl || '/');
+      navigate(returnUrl || '/'); // সফল লগইনের ক্ষেত্রে নেভিগেট
     } catch (error: any) {
       console.log('Server error response:', error); // ডিবাগিংয়ের জন্য
       let errors: string[] = [];
@@ -54,13 +54,15 @@ const LoginPage: React.FC = () => {
         errors = error.response.data.errors; // { errors: string[] }
       } else if (typeof error.response?.data === 'string') {
         errors = [error.response.data]; // স্ট্রিং হিসেবে এরর
+      } else if (error.response?.data?.message) {
+        errors = [error.response.data.message]; // API থেকে message ফিল্ড
       } else if (error.message) {
         errors = [error.message]; // ফলব্যাক মেসেজ
       } else {
-        errors = ['Invalid credentials'];
+        errors = ['An error occurred'];
       }
 
-      setErrorMessages(errors);
+      setErrorMessages(errors); // এরর মেসেজ ফর্মের নিচে প্রদর্শন
     }
   };
 
