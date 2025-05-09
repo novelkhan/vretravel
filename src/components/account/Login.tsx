@@ -70,6 +70,15 @@ const LoginPage: React.FC = () => {
     navigate('/account/send-email/resend-email-confirmation-link');
   };
 
+  // ক্লায়েন্ট-সাইড ভ্যালিডেশন মেসেজ তালিকা তৈরি
+  const clientSideErrors: string[] = []; // টাইপ স্পষ্টভাবে ডিফাইন করা হয়েছে
+  if ((submitted || isSubmitted) && errors.userName?.type === 'required') {
+    clientSideErrors.push('Username is required');
+  }
+  if ((submitted || isSubmitted) && errors.password?.type === 'required') {
+    clientSideErrors.push('Password is required');
+  }
+
   return (
     <div className="d-flex justify-content-center">
       <div className="col-12 col-lg-5">
@@ -88,9 +97,6 @@ const LoginPage: React.FC = () => {
                 autoComplete="username"
               />
               <label htmlFor="userName">Username (your email address)</label>
-              {(submitted || isSubmitted) && errors.userName?.type === 'required' && (
-                <span className="text-danger">Username is required</span>
-              )}
             </div>
             <div className="form-floating mb-3">
               <input
@@ -102,14 +108,11 @@ const LoginPage: React.FC = () => {
                 autoComplete="current-password"
               />
               <label htmlFor="password">Password</label>
-              {(submitted || isSubmitted) && errors.password?.type === 'required' && (
-                <span className="text-danger">Password is required</span>
-              )}
             </div>
-            {errorMessages.length > 0 && (
-              <div className="form-floating mb-3">
-                <ValidationMessages errorMessages={errorMessages} />
-                {errorMessages[0].includes('Please confirm your email') && (
+            {(clientSideErrors.length > 0 || errorMessages.length > 0) && (
+              <div className="mb-3">
+                <ValidationMessages errorMessages={[...clientSideErrors, ...errorMessages]} />
+                {errorMessages.some(msg => msg.includes('Please confirm your email')) && (
                   <a
                     className="btn btn-link p-0"
                     onClick={resendEmailConfirmationLink}

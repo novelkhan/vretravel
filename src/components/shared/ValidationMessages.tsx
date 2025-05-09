@@ -1,35 +1,20 @@
-// import React from 'react';
-
-// const ValidationMessages = ({ errorMessages }) => {
-//   return (
-//     <ul className="text-danger">
-//       {errorMessages.map((error, index) => (
-//         <li key={index}>{error}</li>
-//       ))}
-//     </ul>
-//   );
-// };
-
-// export default ValidationMessages;
-
-
 import React from 'react';
 
 interface ValidationMessagesProps {
-  errorMessages?: string[];
+  errorMessages: string[];
 }
 
 const ValidationMessages: React.FC<ValidationMessagesProps> = ({ errorMessages }) => {
-  if (!errorMessages || errorMessages.length === 0) {
-    return null;
-  }
+  if (!errorMessages || errorMessages.length === 0) return null;
 
   return (
-    <ul className="text-danger list-unstyled">
-      {errorMessages.map((error, index) => (
-        <li key={index}>{error}</li>
-      ))}
-    </ul>
+    <div className="alert alert-danger" role="alert">
+      <ul className="mb-0">
+        {errorMessages.map((message, index) => (
+          <li key={index}>{message}</li>
+        ))}
+      </ul>
+    </div>
   );
 };
 
