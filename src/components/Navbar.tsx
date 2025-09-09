@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import accountService from '../services/AccountService';
-import { UserHasRole } from './directives/UserHasRole';
-import { UserHasNotRole } from './directives/UserHasNotRole';
+import { UserHasRole } from '../directives/UserHasRole';
+import { UserHasNotRole } from '../directives/UserHasNotRole';
 import { useAccount } from '../context/AccountContext';
 import './Navbar.css';
 

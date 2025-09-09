@@ -1,6 +1,6 @@
 import React from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { useAccount } from '../../context/AccountContext';
+import { useAccount } from '../context/AccountContext';
 
 interface UserHasNotRoleProps {
   roles: string[];
