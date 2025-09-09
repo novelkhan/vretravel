@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { environment } from '../environments';
-import accountService from './AccountService';
+import accountService from './AccountService'; // JWT টোকেনের জন্য
 
 const API_URL = `${environment.apiUrl}/api/customer`;
 
@@ -10,12 +10,7 @@ class CustomerService {
       const response = await axios.get(`${API_URL}/get-customers`, {
         headers: {
           'Authorization': `Bearer ${accountService.getJWT()}`
-        },
-        // রেসপন্স ডাটা সরাসরি value field এ পেতে
-        transformResponse: [(data) => {
-          const parsed = JSON.parse(data);
-          return parsed.value; // সরাসরি value field return করবে
-        }]
+        }
       });
       return response;
     } catch (error: any) {
