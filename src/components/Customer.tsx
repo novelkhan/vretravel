@@ -7,8 +7,8 @@ const Customer = () => {
   useEffect(() => {
     customerService.getCustomers()
       .then(response => {
-        // এখন সরাসরি message এক্সেস করা যাবে
-        setMessage(response.data.message);
+        // সঠিকভাবে nested value এক্সেস করুন
+        setMessage(response.data.value.message);
       })
       .catch(error => {
         console.log(error);
