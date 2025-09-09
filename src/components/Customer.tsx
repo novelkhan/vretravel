@@ -17,7 +17,7 @@ const Customer = () => {
   }, []);
 
   return (
-    <div>
+    <div className="ms-5">
       {message && <p>{message}</p>}
     </div>
   );
