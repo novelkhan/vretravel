@@ -22,6 +22,7 @@ const AddPackage = React.lazy(() => import('./components/package/AddPackage'));
 const EditPackage = React.lazy(() => import('./components/package/EditPackage'));
 const Login = React.lazy(() => import('./components/account/Login'));
 const Register = React.lazy(() => import('./components/account/Register'));
+const ConfirmEmail = React.lazy(() => import('./components/account/ConfirmEmail'));
 
 const AppLayout = () => {
   const checkUserActivity = () => {
@@ -95,6 +96,7 @@ const App = () => {
             <Route path="account">
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
+              <Route path="confirm-email" element={<ConfirmEmail />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
