@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 const SendEmail = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [errorMessages, setErrorMessages] = useState<string[]>([]); // টাইপ ডিফাইন করুন
+  const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const { mode } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!mode) {
       navigate('/account/login');
-      return; // Early return to avoid further execution
+      return;
     }
   }, [mode, navigate]);
 
@@ -24,13 +24,15 @@ const SendEmail = () => {
     if (mode) {
       try {
         const response = await axios.post(`/api/account/${mode}`, { email });
-        // Handle success notification
         navigate('/account/login');
-      } catch (error) {
-        if (error.response.data.errors) {
+      } catch (err) {
+        const error = err as AxiosError<any>; // 👈 এখানে টাইপ কাস্ট
+        if (error.response?.data?.errors) {
           setErrorMessages(error.response.data.errors);
-        } else {
+        } else if (error.response?.data) {
           setErrorMessages([error.response.data]);
+        } else {
+          setErrorMessages(['Something went wrong.']);
         }
       }
     }
@@ -43,7 +45,9 @@ const SendEmail = () => {
           <form onSubmit={sendEmail}>
             <div className="text-center mb-4">
               <h1 className="mb-3 font-weight-normal">
-                {mode && mode.includes('resend-email-confirmation-link') ? 'Resend email confirmation link' : 'Retrieve your username or password'}
+                {mode && mode.includes('resend-email-confirmation-link')
+                  ? 'Resend email confirmation link'
+                  : 'Retrieve your username or password'}
               </h1>
             </div>
             <div className="form-floating mb-3">
